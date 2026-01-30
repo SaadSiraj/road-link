@@ -6,7 +6,7 @@ class AppColors {
     0xFF1A56DB,
   ); // Vibrant blue for buttons and logo
   static const Color primaryBlueDark = Color(
-    0xFF1A56DB,
+    0xFF204DC4,
   ); // Darker blue for pressed states
   static const Color primaryBlueLight = Color(
     0xFF4DA3FF,
@@ -20,7 +20,7 @@ class AppColors {
     0xFF111A2D,
   ); // Main scaffold background
   static const Color cardBackground = Color(
-    0xFF1A2332,
+    0xFF222B3C,
   ); // Card/card-like section background
   static const Color backgroundSoft = Color(
     0xFF16202F,
@@ -51,6 +51,9 @@ class AppColors {
   static const Color linkColor = primaryBlue; // Link color (same as primary)
   static const Color iconColor = Color(0xFFFFFFFF); // Icon color (white)
   static const Color inputBorder = Color(0xFF2A3441); // Input field border
+  static const Color textFieldFillColor = Color(
+    0xFF343C4D,
+  ); // Text field fill color
 
   // Progress Indicator
   static const Color progressActive = primaryBlue;
@@ -61,5 +64,15 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [primaryBlue, primaryBlueDark],
+  );
+
+  // Metrics Cards Gradient
+  static const LinearGradient metricsGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [
+      Color(0xFF1B5E20), // Dark green
+      Color(0xFF2E7D32), // Medium green
+    ],
   );
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../constants/app_colors.dart';
+import '../constants/app_colors.dart';
+import '../shared/app_text.dart';
+import '../utils/size_utils.dart';
 
 class ReusableTextField extends StatefulWidget {
   final String? label;
@@ -249,13 +251,23 @@ class _ReusableTextFieldState extends State<ReusableTextField> {
   @override
   Widget build(BuildContext context) {
     final borderRadius = widget.borderRadius ?? 20.0;
-    final fillColor = widget.fillColor ?? AppColors.cardBackground;
+    final fillColor = widget.fillColor ?? AppColors.textFieldFillColor;
     final textColor = widget.textColor ?? AppColors.textPrimary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Label above the field
+        if (widget.label != null) ...[
+          AppText(
+            widget.required ? '${widget.label} *' : widget.label!,
+            size: 14.fSize,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w500,
+          ),
+          Gap.v(8),
+        ],
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
@@ -310,25 +322,7 @@ class _ReusableTextFieldState extends State<ReusableTextField> {
                 fontSize: 15,
                 fontWeight: FontWeight.normal,
               ),
-              labelText:
-                  widget.label != null
-                      ? widget.required
-                          ? '${widget.label} *'
-                          : widget.label
-                      : null,
-              labelStyle: TextStyle(
-                color: _isFocused ? AppColors.primary : AppColors.textSecondary,
-                fontSize: 15,
-              ),
-              floatingLabelStyle: TextStyle(
-                color: AppColors.primary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              floatingLabelBehavior:
-                  widget.label != null
-                      ? FloatingLabelBehavior.auto
-                      : FloatingLabelBehavior.never,
+              floatingLabelBehavior: FloatingLabelBehavior.never,
               helperText: widget.helperText,
               helperMaxLines: 2,
               helperStyle: TextStyle(

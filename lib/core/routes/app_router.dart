@@ -1,7 +1,25 @@
 import 'package:flutter/material.dart';
 
-import '../../module/auth/sign_in.dart';
-import '../shared/widgets/app_text.dart';
+import '../../module/admin/admin_dashboard_view.dart';
+import '../../module/admin/pending_registration_car_view.dart';
+import '../../module/admin/user_list_view.dart';
+import '../../module/admin/car_list_view.dart';
+import '../../module/splash/splash_view.dart';
+import '../../module/auth/auth_selection_view.dart';
+import '../../module/auth/signin_view.dart.dart';
+import '../../module/auth/register/registration_view.dart';
+import '../../module/auth/register/account_details_view.dart';
+import '../../module/auth/register/car_registration_view.dart';
+import '../../module/auth/register/verify_code_view.dart';
+import '../../module/auth/register/complete_profile_view.dart';
+import '../../module/user/dashboard/home_dashboard_view.dart';
+import '../../module/user/chat/chat_detail_view.dart';
+import '../../module/user/base_navigation/base_navigation_view.dart';
+import '../../module/user/profile/profile_view.dart';
+import '../../module/user/profile/registrations_view.dart';
+import '../../module/user/profile/edit_profile_view.dart';
+import '../../module/user/profile/privacy_permissions_view.dart';
+import '../shared/app_text.dart';
 import 'routes_name.dart';
 
 class AppRouter {
@@ -9,48 +27,76 @@ class AppRouter {
     WidgetBuilder builder;
 
     switch (settings.name) {
+      // Splash
+      case RouteNames.splash:
+        builder = (_) => const SplashView();
+        break;
+      
+      // Auth
+      case RouteNames.authSelection:
+        builder = (_) => const AuthSelectionView();
+        break;
       case RouteNames.signIn:
         builder = (_) => const SignInView();
         break;
-      // case RouteNames.resetPassword:
-      //   builder = (_) => const ResetPasswordView();
-      //   break;
-      // case RouteNames.home:
-      //   builder = (_) => const HomeView();
-      //   break;
-      // case RouteNames.myTools:
-      //   builder = (_) => const MyToolsView();
-      //   break;
-      // case RouteNames.onboarding:
-      //   builder = (_) => const OnboardingView();
-      //   break;
-      // case RouteNames.register:
-      //   builder = (_) => const RegisterView();
-      // break;
-      // case RouteNames.authDecision:
-      //   builder = (_) => const AuthDecisionView();
-      //   break;
-      // case RouteNames.signUpWithPhone:
-      //   builder = (_) => const SignupWithPhoneScreen();
-      //   break;
-      // case RouteNames.login:
-      //   builder = (_) => const LoginView(); // Replace with LoginView later
-      //   break;
-      // case RouteNames.home:
-      //   builder = (_) => const HomeView();
-      //   break;
+      case RouteNames.registration:
+        builder = (_) => const RegistrationView();
+        break;
 
-      // case RouteNames.parcelDelivery:
-      //   builder = (_) => const ParcelDeliveryView();
-      //   break;
-      // case RouteNames.signUp:
-      //   builder = (_) => const SignupView();
-      //   break;
-      // case RouteNames.otp:
-      //   builder = (_) => const OtpScreen();
-      //   break;
+      // Registration Flow (Individual routes - kept for backward compatibility)
+      case RouteNames.accountDetails:
+        builder = (_) => const AccountDetailsView();
+        break;
+      case RouteNames.carRegistration:
+        builder = (_) => const CarRegistrationView();
+        break;
+      case RouteNames.verifyCode:
+        builder = (_) => const VerifyCodeView();
+        break;
+      case RouteNames.completeProfile:
+        builder = (_) => const CompleteProfileView();
+        break;
 
-      // Add other routes here...
+      // Dashboard
+      case RouteNames.homeDashboard:
+        builder = (_) => const HomeDashboardView();
+        break;
+      case RouteNames.baseNavigation:
+        builder = (_) => const BaseNavigation();
+        break;
+
+      // Chat
+      case RouteNames.chatDetail:
+        builder = (_) => const ChatDetailView();
+        break;
+
+      // Profile
+      case RouteNames.profile:
+        builder = (_) => const ProfileView();
+        break;
+      case RouteNames.registrations:
+        builder = (_) => const RegistrationsView();
+        break;
+      case RouteNames.editProfile:
+        builder = (_) => const EditProfileView();
+        break;
+      case RouteNames.privacyPermissions:
+        builder = (_) => const PrivacyPermissionsView();
+        break;
+
+      // Admin
+      case RouteNames.adminDashboard:
+        builder = (_) => const AdminDashboardView();
+        break;
+      case RouteNames.pendingCarRequests:
+        builder = (_) => const PendingCarRequestsView();
+        break;
+      case RouteNames.usersManagement:
+        builder = (_) => const UsersListView();
+        break;
+      case RouteNames.carsManagement:
+        builder = (_) => const CarsListView();
+        break;
 
       default:
         builder =

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:roadlink/core/utils/size_utils.dart';
 
-import '../../constants/app_colors.dart';
+import '../constants/app_colors.dart';
 
 class CustomButton extends StatefulWidget {
   final String text;
@@ -13,6 +14,8 @@ class CustomButton extends StatefulWidget {
   final FontWeight fontWeight;
   final double fontSize;
   final bool isDisabled;
+  final Color? borderColor;
+  final IconData? icon;
 
   const CustomButton({
     super.key,
@@ -26,6 +29,8 @@ class CustomButton extends StatefulWidget {
     this.fontWeight = FontWeight.w600,
     this.fontSize = 16,
     this.isDisabled = false,
+    this.borderColor,
+    this.icon,
   });
 
   @override
@@ -96,6 +101,10 @@ class _CustomButtonState extends State<CustomButton>
           decoration: BoxDecoration(
             color: bgColor,
             borderRadius: BorderRadius.circular(widget.borderRadius),
+            border:
+                widget.borderColor != null
+                    ? Border.all(color: widget.borderColor!, width: 1.5)
+                    : null,
             boxShadow: [
               if (!widget.isDisabled)
                 BoxShadow(
@@ -106,13 +115,30 @@ class _CustomButtonState extends State<CustomButton>
             ],
           ),
           alignment: Alignment.center,
-          child: Text(
-            widget.text,
-            style: TextStyle(
-              color: txtColor,
-              fontSize: widget.fontSize,
-              fontWeight: widget.fontWeight,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.icon != null) ...[
+                Padding(
+                  padding: EdgeInsets.only(right: 8.h, left: 10),
+                  child: Icon(
+                    widget.icon,
+                    color: txtColor,
+                    size: widget.fontSize + 2,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                widget.text,
+                style: TextStyle(
+                  color: txtColor,
+                  fontSize: widget.fontSize,
+                  fontWeight: widget.fontWeight,
+                ),
+              ),
+            ],
           ),
         ),
       ),

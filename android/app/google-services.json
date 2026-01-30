@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "214357187230",
+    "project_id": "roadlink-f91ef",
+    "storage_bucket": "roadlink-f91ef.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:214357187230:android:da51253f6886b09cc0398f",
+        "android_client_info": {
+          "package_name": "com.mario.roadlink"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBS4fp1D9PkBL-im-qzAKUQY78zwKyNmKU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

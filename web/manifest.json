@@ -1,6 +1,6 @@
 {
-    "name": "roadlink",
-    "short_name": "roadlink",
+    "name": "Car",
+    "short_name": "Car",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

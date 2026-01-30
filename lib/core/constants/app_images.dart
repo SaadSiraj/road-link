@@ -7,7 +7,7 @@ class AppImages {
   static const String onboarding1 = "assets/images/onboarding1.jpeg";
   static const String onboarding2 = "assets/images/onboarding2.jpeg";
   static const String onboarding3 = "assets/images/onboarding3.jpeg";
-  static const String onboarding4 =  "assets/images/onboarding4.jpeg";
+  static const String onboarding4 = "assets/images/onboarding4.jpeg";
 
   // ===== Home / Dashboard =====
   static const String banner1 = "assets/images/banner1.png";
@@ -39,4 +39,14 @@ class AppImages {
 
   // ===== social media =====
   static const String googleLogo = "assets/icons/google.png";
+  // ===== icons =====
+  static const String homeIcon = "assets/icons/home_icon.png";
+  static const String chatIcon = "assets/icons/chat_icon.png";
+  static const String profileIcon = "assets/icons/profile_icon.png";
+  static const String settingsIcon = "assets/icons/settings_icon.png";
+  static const String logoutIcon = "assets/icons/logout_icon.png";
+  static const String helpIcon = "assets/icons/help_icon.png";
+  static const String feedbackIcon = "assets/icons/feedback_icon.png";
+  static const String aboutIcon = "assets/icons/about_icon.png";
+  static const String contactIcon = "assets/icons/contact_icon.png";
 }
