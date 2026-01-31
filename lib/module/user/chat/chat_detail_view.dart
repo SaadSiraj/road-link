@@ -1,325 +1,428 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_images.dart';
-import '../../../core/shared/app_button.dart';
 import '../../../core/shared/app_text.dart';
+import '../../../models/message_model.dart';
+import '../../../viewmodels/chat_detail_viewmodel.dart';
+import 'chat_detail_args.dart';
 
-class ChatDetailView extends StatelessWidget {
-  final String userName;
-  final bool isOnline;
-  final bool isRequest; // Whether this is a chat request
+class ChatDetailView extends StatefulWidget {
+  final ChatDetailArgs? args;
 
-  const ChatDetailView({
-    super.key,
-    this.userName = 'John Ham',
-    this.isOnline = true,
-    this.isRequest = true,
-  });
+  const ChatDetailView({super.key, this.args});
+
+  @override
+  State<ChatDetailView> createState() => _ChatDetailViewState();
+}
+
+class _ChatDetailViewState extends State<ChatDetailView> {
+  ChatDetailViewModel? _viewModel;
+  final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  int _lastMessageCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.args != null) {
+      _viewModel = ChatDetailViewModel(
+        conversationId: widget.args!.conversationId,
+        otherUserId: widget.args!.otherUserId,
+        otherUserName: widget.args!.otherUserName,
+        otherUserPhotoUrl: widget.args!.otherUserPhotoUrl,
+      )..initialize();
+      _viewModel!.addListener(_onViewModelChanged);
+    }
+  }
+
+  void _onViewModelChanged() {
+    if (_viewModel != null &&
+        _viewModel!.messages.length > _lastMessageCount) {
+      _lastMessageCount = _viewModel!.messages.length;
+      _scrollToBottom();
+    }
+  }
+
+  @override
+  void dispose() {
+    _viewModel?.removeListener(_onViewModelChanged);
+    _viewModel?.dispose();
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(
+    if (widget.args == null) {
+      return Scaffold(
+        backgroundColor: AppColors.scaffoldBackground,
+        body: Center(
+          child: AppText(
+            'Invalid chat',
+            color: AppColors.textSecondary,
+          ),
+        ),
+      );
+    }
+
+    return ChangeNotifierProvider<ChatDetailViewModel>.value(
+      value: _viewModel!,
+      child: Consumer<ChatDetailViewModel>(
+        builder: (context, vm, child) {
+          return Scaffold(
+            backgroundColor: AppColors.scaffoldBackground,
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(context, vm),
+                  Expanded(
+                    child: vm.isLoading && vm.messages.isEmpty
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryBlue,
+                            ),
+                          )
+                        : _buildMessagesList(context, vm),
+                  ),
+                  _buildInputBar(context, vm),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, ChatDetailViewModel vm) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBackground,
+        border: Border(
+          bottom: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: Icon(
+              Icons.arrow_back,
+              size: 24.fSize,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          Gap.h(12),
+          _buildAvatar(vm.otherUserPhotoUrl),
+          Gap.h(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  vm.otherUserName,
+                  size: 16.fSize,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+                Gap.v(2),
+                Row(
+                  children: [
+                    Container(
+                      width: 8.adaptSize,
+                      height: 8.adaptSize,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Gap.h(6),
+                    AppText(
+                      'Online',
+                      size: 12.fSize,
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Icons.phone,
+              size: 24.fSize,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: Icon(
+              Icons.more_vert,
+              size: 24.fSize,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatar(String? photoUrl) {
+    return Container(
+      width: 40.adaptSize,
+      height: 40.adaptSize,
+      decoration: const BoxDecoration(shape: BoxShape.circle),
+      child: ClipOval(
+        child: photoUrl != null && photoUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: photoUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: AppColors.cardBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 24.fSize,
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.cardBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 24.fSize,
+                  ),
+                ),
+              )
+            : Image.asset(
+                AppImages.userAvatar,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppColors.cardBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 24.fSize,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildMessagesList(BuildContext context, ChatDetailViewModel vm) {
+    if (vm.messages.isEmpty) {
+      return Center(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            /// 🔹 HEADER
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
-              decoration: BoxDecoration(
-                color: AppColors.scaffoldBackground,
-                border: Border(
-                  bottom: BorderSide(color: AppColors.border, width: 1),
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 48.adaptSize,
+              color: AppColors.textSecondary,
+            ),
+            Gap.v(12),
+            AppText(
+              vm.emptyStateMessage,
+              size: 14.fSize,
+              color: AppColors.textSecondary,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.v),
+      itemCount: vm.messages.length,
+      itemBuilder: (context, index) {
+        final msg = vm.messages[index];
+        final isMe = vm.isMessageFromMe(msg);
+        return _buildMessageBubble(context, vm, msg, isMe);
+      },
+    );
+  }
+
+  Widget _buildMessageBubble(
+    BuildContext context,
+    ChatDetailViewModel vm,
+    MessageModel msg,
+    bool isMe,
+  ) {
+    return Align(
+      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.sizeOf(context).width * 0.75,
+        ),
+        margin: EdgeInsets.only(bottom: 8.v),
+        padding: EdgeInsets.symmetric(
+          horizontal: 16.h,
+          vertical: 12.v,
+        ),
+        decoration: BoxDecoration(
+          color: isMe ? AppColors.primaryBlue : AppColors.cardBackground,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16.adaptSize),
+            topRight: Radius.circular(16.adaptSize),
+            bottomRight: Radius.circular(isMe ? 4.adaptSize : 16.adaptSize),
+            bottomLeft: Radius.circular(isMe ? 16.adaptSize : 4.adaptSize),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppText(
+              msg.text,
+              size: 14.fSize,
+              color: isMe ? Colors.white : AppColors.textPrimary,
+            ),
+            Gap.v(6),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AppText(
+                  ChatDetailViewModel.formatMessageTime(msg.createdAt),
+                  size: 11.fSize,
+                  color: isMe
+                      ? Colors.white.withValues(alpha: 0.8)
+                      : AppColors.textSecondary,
                 ),
-              ),
-              child: Row(
-                children: [
-                  /// Back Button
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back,
-                      size: 24.fSize,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-
-                  Gap.h(12),
-
-                  /// Profile Picture
-                  Container(
-                    width: 40.adaptSize,
-                    height: 40.adaptSize,
-                    decoration: BoxDecoration(shape: BoxShape.circle),
-                    child: ClipOval(
-                      child: Image.asset(
-                        AppImages.userAvatar,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            color: AppColors.cardBackground,
-                            child: Icon(
-                              Icons.person,
-                              color: AppColors.textSecondary,
-                              size: 24.fSize,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-
-                  Gap.h(12),
-
-                  /// Name and Online Status
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppText(
-                          userName,
-                          size: 16.fSize,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        if (isOnline) ...[
-                          Gap.v(2),
-                          Row(
-                            children: [
-                              Container(
-                                width: 8.adaptSize,
-                                height: 8.adaptSize,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              Gap.h(6),
-                              AppText(
-                                'Online',
-                                size: 12.fSize,
-                                color: AppColors.success,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  /// Phone Icon
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.phone,
-                      size: 24.fSize,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-
-                  /// More Options Icon
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.more_vert,
-                      size: 24.fSize,
-                      color: AppColors.textPrimary,
-                    ),
+                if (isMe) ...[
+                  Gap.h(4),
+                  Icon(
+                    Icons.check,
+                    size: 14.fSize,
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
                 ],
-              ),
-            ),
-
-            /// 🔹 CHAT MESSAGES AREA
-            Expanded(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 16.v),
-                child: Column(
-                  children: [
-                    /// Received Message Bubble
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.h,
-                          vertical: 12.v,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(16.adaptSize),
-                            topRight: Radius.circular(16.adaptSize),
-                            bottomRight: Radius.circular(16.adaptSize),
-                            bottomLeft: Radius.circular(4.adaptSize),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText(
-                              'Hey! I saw your Tesla at the downtown garage yesterday. Those wheels look amazing!',
-                              size: 14.fSize,
-                              color: AppColors.textPrimary,
-                            ),
-                            Gap.v(6),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                AppText(
-                                  '10:24 AM',
-                                  size: 11.fSize,
-                                  color: AppColors.textSecondary,
-                                ),
-                                Gap.h(4),
-                                Icon(
-                                  Icons.check,
-                                  size: 14.fSize,
-                                  color: AppColors.primaryBlue,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            /// 🔹 ACTION BUTTONS (Only for chat requests)
-            if (isRequest) ...[
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 16.v),
-                child: Row(
-                  children: [
-                    /// Reject Button
-                    Expanded(
-                      child: CustomButton(
-                        text: 'Reject Request',
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                        backgroundColor: AppColors.cardBackground,
-                        textColor: AppColors.textPrimary,
-                        borderRadius: 10.adaptSize,
-                        height: 50.v,
-                        fontSize: 16.fSize,
-                        fontWeight: FontWeight.w500,
-                        borderColor: AppColors.border,
-                      ),
-                    ),
-
-                    Gap.h(16),
-
-                    /// Accept Button
-                    Expanded(
-                      child: CustomButton(
-                        text: 'Accept Request',
-                        onPressed: () {
-                          // Accept request logic
-                        },
-                        backgroundColor: AppColors.primaryBlue,
-                        textColor: AppColors.white,
-                        borderRadius: 10.adaptSize,
-                        height: 50.v,
-                        fontSize: 16.fSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            /// 🔹 MESSAGE INPUT BAR
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
-              decoration: BoxDecoration(
-                color: AppColors.scaffoldBackground,
-                border: Border(
-                  top: BorderSide(color: AppColors.border, width: 1),
-                ),
-              ),
-              child: Row(
-                children: [
-                  /// Attach Button
-                  Container(
-                    width: 40.adaptSize,
-                    height: 40.adaptSize,
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.add,
-                        size: 24.fSize,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-
-                  Gap.h(12),
-
-                  /// Message Input Field
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 16.h),
-                      decoration: BoxDecoration(
-                        color: AppColors.textFieldFillColor,
-                        borderRadius: BorderRadius.circular(24.adaptSize),
-                      ),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Type a message...',
-                          hintStyle: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14.fSize,
-                          ),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 12.v),
-                        ),
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 14.fSize,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  Gap.h(12),
-
-                  /// Send Button
-                  Container(
-                    width: 40.adaptSize,
-                    height: 40.adaptSize,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.send,
-                        size: 20.fSize,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildInputBar(BuildContext context, ChatDetailViewModel vm) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
+      decoration: BoxDecoration(
+        color: AppColors.scaffoldBackground,
+        border: Border(
+          top: BorderSide(color: AppColors.border, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40.adaptSize,
+            height: 40.adaptSize,
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: () {},
+              icon: Icon(
+                Icons.add,
+                size: 24.fSize,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+          Gap.h(12),
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.h),
+              decoration: BoxDecoration(
+                color: AppColors.textFieldFillColor,
+                borderRadius: BorderRadius.circular(24.adaptSize),
+              ),
+              child: TextField(
+                controller: _messageController,
+                enabled: vm.canSendMessages,
+                decoration: InputDecoration(
+                  hintText: vm.canSendMessages
+                      ? 'Type a message...'
+                      : 'Accept the request to chat',
+                  hintStyle: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14.fSize,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12.v),
+                ),
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14.fSize,
+                ),
+                onSubmitted: vm.canSendMessages ? (_) => _sendMessage(vm) : null,
+              ),
+            ),
+          ),
+          Gap.h(12),
+          Container(
+            width: 40.adaptSize,
+            height: 40.adaptSize,
+            decoration: BoxDecoration(
+              color: vm.canSendMessages
+                  ? AppColors.primaryBlue
+                  : AppColors.textSecondary.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: vm.canSendMessages && !vm.isSending
+                  ? () => _sendMessage(vm)
+                  : null,
+              icon: vm.isSending
+                  ? SizedBox(
+                      width: 20.adaptSize,
+                      height: 20.adaptSize,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      Icons.send,
+                      size: 20.fSize,
+                      color: Colors.white,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// UI-only: get text from field, delegate send to VM, then clear and scroll.
+  void _sendMessage(ChatDetailViewModel vm) {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    vm.sendMessage(text);
+    _messageController.clear();
+    _scrollToBottom();
   }
 }

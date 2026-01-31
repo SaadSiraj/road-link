@@ -13,6 +13,7 @@ import '../../module/auth/register/car_registration_view.dart';
 import '../../module/auth/register/verify_code_view.dart';
 import '../../module/auth/register/complete_profile_view.dart';
 import '../../module/user/dashboard/home_dashboard_view.dart';
+import '../../module/user/chat/chat_detail_args.dart';
 import '../../module/user/chat/chat_detail_view.dart';
 import '../../module/user/base_navigation/base_navigation_view.dart';
 import '../../module/user/profile/profile_view.dart';
@@ -67,7 +68,8 @@ class AppRouter {
 
       // Chat
       case RouteNames.chatDetail:
-        builder = (_) => const ChatDetailView();
+        final chatArgs = ChatDetailArgs.fromDynamic(settings.arguments);
+        builder = (_) => ChatDetailView(args: chatArgs);
         break;
 
       // Profile

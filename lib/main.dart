@@ -13,6 +13,7 @@ import 'viewmodels/users_list_viewmodel.dart';
 import 'viewmodels/user_detail_viewmodel.dart';
 import 'viewmodels/cars_list_viewmodel.dart';
 import 'viewmodels/home_dashboard_viewmodel.dart';
+import 'viewmodels/chat_home_viewmodel.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); 
@@ -50,6 +51,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<HomeDashboardViewModel>(
           create: (_) => HomeDashboardViewModel()..initialize(),
+        ),
+        ChangeNotifierProvider<ChatHomeViewModel>(
+          create: (_) => ChatHomeViewModel(),
         ),
       ],
       child: Sizer(

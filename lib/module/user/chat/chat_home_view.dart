@@ -1,43 +1,67 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_images.dart';
+import '../../../core/routes/routes_name.dart';
 import '../../../core/shared/app_text.dart';
-import 'chat_detail_view.dart';
+import '../../../viewmodels/chat_home_viewmodel.dart';
+import 'chat_detail_args.dart';
 
-class ChatHomeView extends StatelessWidget {
+class ChatHomeView extends StatefulWidget {
   const ChatHomeView({super.key});
+
+  @override
+  State<ChatHomeView> createState() => _ChatHomeViewState();
+}
+
+class _ChatHomeViewState extends State<ChatHomeView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ChatHomeViewModel>().initialize();
+    });
+  }
+
+  @override
+  void dispose() {
+    context.read<ChatHomeViewModel>().dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// 🔹 TOP HEADER
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    /// App Name
-                    AppText(
-                      'Car',
-                      size: 24.fSize,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+        child: Consumer<ChatHomeViewModel>(
+          builder: (context, viewModel, child) {
+            if (viewModel.isLoading && viewModel.conversations.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              );
+            }
 
-                    /// Right side icons
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// Header
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        /// Notification Bell with Badge
-                        Stack(
-                          clipBehavior: Clip.none,
+                        AppText(
+                          'Chat',
+                          size: 24.fSize,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                        Row(
                           children: [
                             IconButton(
                               onPressed: () {},
@@ -47,163 +71,113 @@ class ChatHomeView extends StatelessWidget {
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            Positioned(
-                              right: 8,
-                              top: 8,
+                            Gap.h(12),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pushNamed(context, RouteNames.profile);
+                              },
                               child: Container(
-                                width: 18.adaptSize,
-                                height: 18.adaptSize,
+                                width: 40.adaptSize,
+                                height: 40.adaptSize,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFFF6B35), // Orange
                                   shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: AppColors.border,
+                                    width: 2,
+                                  ),
                                 ),
-                                child: Center(
-                                  child: AppText(
-                                    '3',
-                                    size: 10.fSize,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    AppImages.userAvatar,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Icon(
+                                      Icons.person,
+                                      color: AppColors.textSecondary,
+                                      size: 24.fSize,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ],
                         ),
-
-                        Gap.h(12),
-
-                        /// Profile Picture
-                        Container(
-                          width: 40.adaptSize,
-                          height: 40.adaptSize,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.border,
-                              width: 2,
-                            ),
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              AppImages.userAvatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: AppColors.cardBackground,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: AppColors.textSecondary,
-                                    size: 24.fSize,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                  ],
-                ),
-                Divider(color: AppColors.border, thickness: 1),
-                Gap.v(32),
+                    Divider(color: AppColors.border, thickness: 1),
+                    Gap.v(32),
 
-                /// 🔹 NEW CHAT REQUESTS CARD
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(20.adaptSize),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(16.adaptSize),
-                    border: Border.all(color: AppColors.border, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      AppText(
-                        'New Chat Requests',
-                        size: 16.fSize,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      Container(
-                        width: 28.adaptSize,
-                        height: 28.adaptSize,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryBlue,
-                          shape: BoxShape.circle,
-                        ),
+                    /// Chat list or empty state
+                    if (viewModel.conversations.isEmpty)
+                      Padding(
+                        padding: EdgeInsets.only(top: 48.v),
                         child: Center(
-                          child: AppText(
-                            '2',
-                            size: 14.fSize,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_outline,
+                                size: 64.adaptSize,
+                                color: AppColors.textSecondary,
+                              ),
+                              Gap.v(16),
+                              AppText(
+                                'No conversations yet',
+                                size: 16.fSize,
+                                color: AppColors.textSecondary,
+                              ),
+                              Gap.v(8),
+                              AppText(
+                                'Start a chat from the dashboard when you find a car or user.',
+                                size: 14.fSize,
+                                color: AppColors.textTertiary,
+                                align: TextAlign.center,
+                              ),
+                            ],
                           ),
                         ),
+                      )
+                    else
+                      Column(
+                        children: viewModel.conversations
+                            .map((item) => Padding(
+                                  padding: EdgeInsets.only(bottom: 16.v),
+                                  child: _buildChatItem(
+                                    context: context,
+                                    item: item,
+                                  ),
+                                ))
+                            .toList(),
                       ),
-                    ],
-                  ),
-                ),
 
-                Gap.v(24),
-
-                /// 🔹 CHAT LIST
-                Column(
-                  children: [
-                    _buildChatItem(
-                      context: context,
-                      name: 'John Ham',
-                      message: 'I found that mechanic you ....',
-                      time: '10:30 AM',
-                      unreadCount: 2,
-                    ),
-                    Gap.v(16),
-                    _buildChatItem(
-                      context: context,
-                      name: 'John Ham',
-                      message: 'I found that mechanic you ....',
-                      time: '10:30 AM',
-                      unreadCount: 0,
-                    ),
-                    Gap.v(16),
-                    _buildChatItem(
-                      context: context,
-                      name: 'John Ham',
-                      message: 'I found that mechanic you ....',
-                      time: '10:30 AM',
-                      unreadCount: 0,
-                    ),
+                    Gap.v(100),
                   ],
                 ),
-
-                Gap.v(100), // Bottom padding for navigation bar
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  /// Helper method to build chat item
   Widget _buildChatItem({
     required BuildContext context,
-    required String name,
-    required String message,
-    required String time,
-    required int unreadCount,
+    required ChatConversationItem item,
   }) {
+    final lastMsg = item.conversation.lastMessageText ?? 'No messages yet';
+    final timeStr = item.conversation.lastMessageAt != null
+        ? _formatTime(item.conversation.lastMessageAt!)
+        : '';
+
     return GestureDetector(
       onTap: () {
-        Navigator.push(
+        Navigator.pushNamed(
           context,
-          MaterialPageRoute(
-            builder:
-                (context) => ChatDetailView(
-                  userName: name,
-                  isOnline: true,
-                  isRequest: unreadCount > 0,
-                ),
+          RouteNames.chatDetail,
+          arguments: ChatDetailArgs(
+            conversationId: item.conversation.id,
+            otherUserId: item.otherUserId,
+            otherUserName: item.otherUserName,
+            otherUserPhotoUrl: item.otherUserPhotoUrl,
           ),
         );
       },
@@ -216,45 +190,21 @@ class ChatHomeView extends StatelessWidget {
         ),
         child: Row(
           children: [
-            /// Profile Picture
-            Container(
-              width: 50.adaptSize,
-              height: 50.adaptSize,
-              decoration: BoxDecoration(shape: BoxShape.circle),
-              child: ClipOval(
-                child: Image.asset(
-                  AppImages.userAvatar,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: AppColors.scaffoldBackground,
-                      child: Icon(
-                        Icons.person,
-                        color: AppColors.textSecondary,
-                        size: 28.fSize,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
+            _buildAvatar(item.otherUserPhotoUrl),
             Gap.h(16),
-
-            /// Chat Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   AppText(
-                    name,
+                    item.otherUserName,
                     size: 16.fSize,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                   Gap.v(4),
                   AppText(
-                    message,
+                    lastMsg,
                     size: 14.fSize,
                     color: AppColors.textSecondary,
                     maxLines: 1,
@@ -263,26 +213,27 @@ class ChatHomeView extends StatelessWidget {
                 ],
               ),
             ),
-
             Gap.h(12),
-
-            /// Time and Unread Badge
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                AppText(time, size: 12.fSize, color: AppColors.textSecondary),
-                if (unreadCount > 0) ...[
+                AppText(
+                  timeStr,
+                  size: 12.fSize,
+                  color: AppColors.textSecondary,
+                ),
+                if (item.unreadCount > 0) ...[
                   Gap.v(8),
                   Container(
                     width: 20.adaptSize,
                     height: 20.adaptSize,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: AppColors.primaryBlue,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: AppText(
-                        unreadCount.toString(),
+                        '${item.unreadCount}',
                         size: 11.fSize,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -296,5 +247,65 @@ class ChatHomeView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAvatar(String? photoUrl) {
+    return Container(
+      width: 50.adaptSize,
+      height: 50.adaptSize,
+      decoration: const BoxDecoration(shape: BoxShape.circle),
+      child: ClipOval(
+        child: photoUrl != null && photoUrl.isNotEmpty
+            ? CachedNetworkImage(
+                imageUrl: photoUrl,
+                fit: BoxFit.cover,
+                placeholder: (_, __) => Container(
+                  color: AppColors.scaffoldBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 28.fSize,
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
+                  color: AppColors.scaffoldBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 28.fSize,
+                  ),
+                ),
+              )
+            : Image.asset(
+                AppImages.userAvatar,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Container(
+                  color: AppColors.scaffoldBackground,
+                  child: Icon(
+                    Icons.person,
+                    color: AppColors.textSecondary,
+                    size: 28.fSize,
+                  ),
+                ),
+              ),
+      ),
+    );
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final msgDate = DateTime(
+      dateTime.year,
+      dateTime.month,
+      dateTime.day,
+    );
+    final diff = today.difference(msgDate).inDays;
+    final timeStr =
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    if (diff == 0) return timeStr;
+    if (diff == 1) return 'Yesterday';
+    if (diff < 7) return '${dateTime.weekday == 1 ? 'Mon' : dateTime.weekday == 2 ? 'Tue' : dateTime.weekday == 3 ? 'Wed' : dateTime.weekday == 4 ? 'Thu' : dateTime.weekday == 5 ? 'Fri' : dateTime.weekday == 6 ? 'Sat' : 'Sun'}';
+    return '${dateTime.day}/${dateTime.month}';
   }
 }
