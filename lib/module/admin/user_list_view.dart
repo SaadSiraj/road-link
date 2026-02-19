@@ -41,9 +41,7 @@ class _UsersListViewState extends State<UsersListView> {
       body: Consumer<UsersListViewModel>(
         builder: (context, viewModel, child) {
           if (viewModel.isLoading && viewModel.users.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (viewModel.errorMessage != null) {
@@ -120,13 +118,17 @@ class _UsersListViewState extends State<UsersListView> {
                   name: user.name,
                   contact: user.phone,
                   carsCount: user.carsCount,
+                  onEdit: () {
+                    _showEditUserDialog(context, viewModel, user);
+                  },
+                  onDelete: () {
+                    _showDeleteUserDialog(context, viewModel, user);
+                  },
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => UserDetailsView(
-                          userId: user.userId,
-                        ),
+                        builder: (_) => UserDetailsView(userId: user.userId),
                       ),
                     );
                   },
@@ -138,6 +140,151 @@ class _UsersListViewState extends State<UsersListView> {
       ),
     );
   }
+
+  void _showEditUserDialog(
+    BuildContext context,
+    UsersListViewModel viewModel,
+    UserListItem user,
+  ) {
+    final nameController = TextEditingController(text: user.name);
+    final phoneController = TextEditingController(text: user.phone);
+
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            title: AppText(
+              'Edit User',
+              size: 18.fSize,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Name',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                  ),
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+                Gap.v(12),
+                TextField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    labelText: 'Phone',
+                    labelStyle: TextStyle(color: AppColors.textSecondary),
+                    enabledBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.primaryBlue),
+                    ),
+                  ),
+                  style: TextStyle(color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: AppText('Cancel', color: AppColors.textSecondary),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await viewModel.updateUser(
+                    userId: user.userId,
+                    name: nameController.text.trim(),
+                    phone: phoneController.text.trim(),
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'User updated successfully'
+                              : 'Failed to update user',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: AppText(
+                  'Save',
+                  color: AppColors.primaryBlue,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void _showDeleteUserDialog(
+    BuildContext context,
+    UsersListViewModel viewModel,
+    UserListItem user,
+  ) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: AppColors.cardBackground,
+            title: AppText(
+              'Delete User',
+              size: 18.fSize,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+            content: AppText(
+              'Are you sure you want to delete ${user.name}? This action cannot be undone and will delete all their registered cars.',
+              color: AppColors.textSecondary,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: AppText('Cancel', color: AppColors.textSecondary),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await viewModel.deleteUser(user.userId);
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'User deleted successfully'
+                              : 'Failed to delete user',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                },
+                child: AppText(
+                  'Delete',
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+    );
+  }
 }
 
 /// 🔹 USER CARD
@@ -146,12 +293,16 @@ class _UserCard extends StatelessWidget {
   final String contact;
   final int carsCount;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   const _UserCard({
     required this.name,
     required this.contact,
     required this.carsCount,
     required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
   });
 
   @override
@@ -200,17 +351,49 @@ class _UserCard extends StatelessWidget {
 
             /// Cars Count
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 6.v),
+              padding: EdgeInsets.symmetric(horizontal: 10.h, vertical: 4.v),
               decoration: BoxDecoration(
-                color: AppColors.primaryBlue.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20.adaptSize),
+                color: AppColors.primaryBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.adaptSize),
               ),
               child: AppText(
-                '$carsCount Cars',
-                size: 12.fSize,
+                '${carsCount} Cars',
+                size: 11.fSize,
                 color: AppColors.primaryBlue,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+
+            Gap.h(12),
+
+            // Actions
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Edit Button
+                InkWell(
+                  onTap: onEdit,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.edit,
+                      size: 20,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+
+                Gap.h(8),
+
+                // Delete Button
+                InkWell(
+                  onTap: onDelete,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(Icons.delete, size: 20, color: Colors.red),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

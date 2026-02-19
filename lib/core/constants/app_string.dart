@@ -1,5 +1,5 @@
 class AppStrings {
-  static const appName = 'Tools Management';
+  static const appName = 'Platoscan';
   static const loading = 'Loading...';
   // Auth
   static const authWelcome = 'Welcome';

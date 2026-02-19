@@ -1,249 +1,20 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routes/routes_name.dart';
 import '../../../core/shared/app_button.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../core/shared/app_textfield.dart';
+import '../../../core/shared/loading_dialogue.dart';
+import '../../../module/user/chat/chat_detail_args.dart';
+import '../../../module/user/dashboard/car_details_popup.dart';
+import '../../../services/car_data_service.dart';
+import '../../../services/chat_service.dart';
 import '../../../viewmodels/car_registration_viewmodel.dart';
-
-// Car Makes List
-List<String> carMakes = [
-  'Toyota',
-  'Honda',
-  'Suzuki',
-  'Hyundai',
-  'Kia',
-  'Nissan',
-  'BMW',
-  'Mercedes-Benz',
-  'Audi',
-  'Volkswagen',
-  'Ford',
-  'Chevrolet',
-  'Mitsubishi',
-  'Mazda',
-  'Subaru',
-  'Lexus',
-  'Tesla',
-  'Porsche',
-  'Land Rover',
-  'Jeep',
-];
-
-
-// Car Models Map (Make → Models)
-Map<String, List<String>> carModels = {
-  'Toyota': [
-    'Corolla',
-    'Yaris',
-    'Camry',
-    'Avalon',
-    'Fortuner',
-    'Prado',
-    'Land Cruiser',
-    'Hilux',
-    'RAV4',
-  ],
-
-  'Honda': [
-    'Civic',
-    'City',
-    'Accord',
-    'BR-V',
-    'CR-V',
-    'HR-V',
-    'Fit',
-  ],
-
-  'Suzuki': [
-    'Alto',
-    'Cultus',
-    'Wagon R',
-    'Swift',
-    'Ciaz',
-    'Mehran',
-    'Bolan',
-    'Every',
-  ],
-
-  'Hyundai': [
-    'Elantra',
-    'Sonata',
-    'Accent',
-    'Tucson',
-    'Santa Fe',
-    'Palisade',
-  ],
-
-  'Kia': [
-    'Sportage',
-    'Picanto',
-    'Stonic',
-    'Rio',
-    'Sorento',
-    'Carnival',
-  ],
-
-  'Nissan': [
-    'Sunny',
-    'Altima',
-    'Sentra',
-    'X-Trail',
-    'Rogue',
-    'Patrol',
-  ],
-
-  'BMW': [
-    '1 Series',
-    '3 Series',
-    '5 Series',
-    '7 Series',
-    'X1',
-    'X3',
-    'X5',
-    'X7',
-  ],
-
-  'Mercedes-Benz': [
-    'A-Class',
-    'C-Class',
-    'E-Class',
-    'S-Class',
-    'GLA',
-    'GLC',
-    'GLE',
-    'G-Class',
-  ],
-
-  'Audi': [
-    'A3',
-    'A4',
-    'A6',
-    'A8',
-    'Q3',
-    'Q5',
-    'Q7',
-  ],
-
-  'Volkswagen': [
-    'Polo',
-    'Golf',
-    'Passat',
-    'Jetta',
-    'Tiguan',
-    'Atlas',
-  ],
-
-  'Ford': [
-    'Fiesta',
-    'Focus',
-    'Fusion',
-    'Mustang',
-    'Explorer',
-    'Ranger',
-    'F-150',
-  ],
-
-  'Chevrolet': [
-    'Spark',
-    'Cruze',
-    'Malibu',
-    'Camaro',
-    'Tahoe',
-  ],
-
-  'Mitsubishi': [
-    'Mirage',
-    'Lancer',
-    'Outlander',
-    'Pajero',
-    'ASX',
-  ],
-
-  'Mazda': [
-    'Mazda 2',
-    'Mazda 3',
-    'Mazda 6',
-    'CX-3',
-    'CX-5',
-    'CX-9',
-  ],
-
-  'Subaru': [
-    'Impreza',
-    'Legacy',
-    'Forester',
-    'Outback',
-    'XV',
-  ],
-
-  'Lexus': [
-    'IS',
-    'ES',
-    'GS',
-    'RX',
-    'NX',
-    'LX',
-  ],
-
-  'Tesla': [
-    'Model S',
-    'Model 3',
-    'Model X',
-    'Model Y',
-  ],
-
-  'Porsche': [
-    '911',
-    'Cayenne',
-    'Macan',
-    'Panamera',
-    'Taycan',
-  ],
-
-  'Land Rover': [
-    'Range Rover',
-    'Range Rover Sport',
-    'Defender',
-    'Discovery',
-  ],
-
-  'Jeep': [
-    'Wrangler',
-    'Cherokee',
-    'Grand Cherokee',
-    'Compass',
-  ],
-};
-
-// Car Colors List
-List<String> carColors = [
-  'Black',
-  'White',
-  'Silver',
-  'Grey',
-  'Dark Grey',
-  'Red',
-  'Maroon',
-  'Blue',
-  'Navy Blue',
-  'Green',
-  'Olive',
-  'Brown',
-  'Beige',
-  'Yellow',
-  'Orange',
-  'Purple',
-  'Gold',
-];
-
-// Car Years List (1995 → Current Year)
-List<String> carYears = List.generate(
-  DateTime.now().year - 1885,
-  (index) => (DateTime.now().year - index).toString(),
-);
 
 class CarRegistrationView extends StatelessWidget {
   final VoidCallback? onNext;
@@ -257,13 +28,8 @@ class CarRegistrationView extends StatelessWidget {
       backgroundColor: AppColors.scaffoldBackground,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
-            child: CarRegistrationContent(
-              onNext: onNext,
-              onBack: onBack ?? () => Navigator.pop(context),
-            ),
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
+          child: CarRegistrationContent(onNext: onNext, onBack: onBack),
         ),
       ),
     );
@@ -292,89 +58,63 @@ class CarRegistrationContent extends StatelessWidget {
           label,
           size: 14.fSize,
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
-        Gap.v(8),
-        Theme(
-          data: Theme.of(context).copyWith(
-            highlightColor: AppColors.primaryBlue,
-            splashColor: AppColors.primaryBlue,
+        Gap.v(10),
+        DropdownButtonFormField<String>(
+          value: value,
+          isExpanded: true,
+          dropdownColor: AppColors.cardBackground,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: enabled ? AppColors.textPrimary : AppColors.textSecondary,
+            size: 20.adaptSize,
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10.adaptSize),
-              color: AppColors.textFieldFillColor,
+          style: TextStyle(
+            fontSize: 15.fSize,
+            color: enabled ? AppColors.textPrimary : AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+          decoration: InputDecoration(
+            hintText: 'Select $label',
+            hintStyle: TextStyle(
+              color: AppColors.textSecondary.withOpacity(0.5),
+              fontSize: 15.fSize,
             ),
-            child: DropdownButtonFormField<String>(
-              value: value,
-              isExpanded: true,
-              dropdownColor: AppColors.cardBackground,
-              items: items.map((String item) {
+            filled: true,
+            fillColor: AppColors.textFieldFillColor,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 20.h,
+              vertical: 16.v,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.adaptSize),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.adaptSize),
+              borderSide: BorderSide(color: AppColors.border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12.adaptSize),
+              borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+            ),
+          ),
+          items:
+              items.map((String item) {
                 return DropdownMenuItem<String>(
                   value: item,
                   child: Text(
                     item,
-                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 15,
-                      color: enabled
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 15.fSize,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 );
               }).toList(),
-              onChanged: enabled ? onChanged : null,
-              menuMaxHeight: 300,
-              decoration: InputDecoration(
-                hintText: '$label',
-                hintStyle: TextStyle(
-                  color: AppColors.textSecondary.withOpacity(0.7),
-                  fontSize: 15,
-                  fontWeight: FontWeight.normal,
-                ),
-                filled: true,
-                fillColor: enabled
-                    ? AppColors.textFieldFillColor
-                    : AppColors.textFieldFillColor,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 16,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.adaptSize),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.adaptSize),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.adaptSize),
-                  borderSide: BorderSide(
-                    color: AppColors.primaryBlue,
-                    width: 2,
-                  ),
-                ),
-                disabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.adaptSize),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: enabled
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
-              ),
-              style: TextStyle(
-                fontSize: 15,
-                color: enabled ? AppColors.textPrimary : AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+          onChanged: enabled ? onChanged : null,
+          menuMaxHeight: 300,
         ),
       ],
     );
@@ -391,42 +131,49 @@ class CarRegistrationContent extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(20.adaptSize),
+                borderRadius: BorderRadius.circular(24.adaptSize),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-              padding: EdgeInsets.all(20.adaptSize),
+              padding: EdgeInsets.all(24.adaptSize),
               child: Column(
                 children: [
                   /// Icon
                   Container(
-                    height: 60.adaptSize,
-                    width: 60.adaptSize,
+                    height: 72.adaptSize,
+                    width: 72.adaptSize,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryBlue.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.directions_car,
-                      color: Colors.white,
-                      size: 28,
+                    child: Icon(
+                      Icons.directions_car_rounded,
+                      color: AppColors.primaryBlue,
+                      size: 32.adaptSize,
                     ),
                   ),
 
-                  Gap.v(20),
+                  Gap.v(24),
 
                   /// Title
                   AppText(
                     'Car Registration',
-                    size: 26.fSize,
+                    size: 28.fSize,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
 
-                  Gap.v(8),
+                  Gap.v(12),
 
                   /// Subtitle
                   AppText(
-                    'Enter your vehicle details for \nregistration',
-                    size: 14.fSize,
+                    'Enter your vehicle details for registration',
+                    size: 15.fSize,
                     align: TextAlign.center,
                     color: AppColors.textSecondary,
                   ),
@@ -439,97 +186,169 @@ class CarRegistrationContent extends StatelessWidget {
                     label: 'Plate Number',
                     hintText: 'eg: AB12CD3456',
                     keyboardType: TextInputType.text,
-                    borderRadius: 14.adaptSize,
+                    borderRadius: 12.adaptSize,
                     fillColor: AppColors.textFieldFillColor,
                     textColor: AppColors.textPrimary,
                     required: true,
-                    validator: (value) {
-                      return viewModel.validatePlateNumber(value);
-                    },
+                    validator: (value) => viewModel.validatePlateNumber(value),
                     onChanged: (value) {
-                      // Clear error message when user starts typing
                       if (viewModel.errorMessage != null && value.isNotEmpty) {
                         viewModel.errorMessage = null;
                       }
                     },
                   ),
 
-                  /// Car Details Section
+                  Gap.v(24),
+
+                  /// Row 1: Make & Model
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdown(
+                          context: context,
+                          label: 'Make',
+                          value: viewModel.selectedMake,
+                          items: CarDataService.carMakes,
+                          onChanged: (val) => viewModel.setMake(val),
+                        ),
+                      ),
+                      Gap.h(16),
+                      Expanded(
+                        child: _buildDropdown(
+                          context: context,
+                          label: 'Model',
+                          value: viewModel.selectedModel,
+                          items:
+                              viewModel.selectedMake != null
+                                  ? (CarDataService.carModels[viewModel
+                                          .selectedMake] ??
+                                      [])
+                                  : [],
+                          onChanged: (val) => viewModel.setModel(val),
+                          enabled: viewModel.selectedMake != null,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Gap.v(24),
+
+                  /// Row 2: Year & Color
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildDropdown(
+                          context: context,
+                          label: 'Year',
+                          value: viewModel.selectedYear,
+                          items: CarDataService.carYears,
+                          onChanged: (val) => viewModel.setYear(val),
+                        ),
+                      ),
+                      Gap.h(16),
+                      Expanded(
+                        child: _buildDropdown(
+                          context: context,
+                          label: 'Color',
+                          value: viewModel.selectedColor,
+                          items: CarDataService.carColors,
+                          onChanged: (val) => viewModel.setColor(val),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Gap.v(32),
+                  const Divider(color: AppColors.border, thickness: 1),
+                  Gap.v(24),
+
+                  /// Car Images Section
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Gap.v(20),
-
-                      /// Row 1: Make & Model
-                      Row(
-                        children: [
-                          /// Make
-                          Expanded(
-                            child: _buildDropdown(
-                              context: context,
-                              label: 'Make',
-                              value: viewModel.selectedMake,
-                              items: carMakes,
-                              onChanged: (String? newValue) {
-                                viewModel.setMake(newValue);
-                              },
-                            ),
-                          ),
-
-                          Gap.h(16),
-
-                          /// Model
-                          Expanded(
-                            child: _buildDropdown(
-                              context: context,
-                              label: 'Model',
-                              value: viewModel.selectedModel,
-                              items: viewModel.selectedMake != null
-                                  ? (carModels[viewModel.selectedMake] ?? [])
-                                  : [],
-                              onChanged: (String? newValue) {
-                                viewModel.setModel(newValue);
-                              },
-                              enabled: viewModel.selectedMake != null,
-                            ),
-                          ),
-                        ],
+                      AppText(
+                        'Car Images (Max 5)',
+                        size: 14.fSize,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
                       ),
-
-                      Gap.v(20),
-
-                      /// Row 2: Year & Color
-                      Row(
-                        children: [
-                          /// Year
-                          Expanded(
-                            child: _buildDropdown(
-                              context: context,
-                              label: 'Year',
-                              value: viewModel.selectedYear,
-                              items: carYears,
-                              onChanged: (String? newValue) {
-                                viewModel.setYear(newValue);
-                              },
-                            ),
+                      Gap.v(12),
+                      if (viewModel.selectedImages.isNotEmpty)
+                        Container(
+                          height: 100.adaptSize,
+                          margin: EdgeInsets.only(bottom: 20.v),
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: viewModel.selectedImages.length,
+                            itemBuilder: (context, index) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    width: 100.adaptSize,
+                                    height: 100.adaptSize,
+                                    margin: EdgeInsets.only(right: 12.h),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(
+                                        12.adaptSize,
+                                      ),
+                                      image: DecorationImage(
+                                        image: FileImage(
+                                          File(
+                                            viewModel
+                                                .selectedImages[index]
+                                                .path,
+                                          ),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 6,
+                                    right: 18,
+                                    child: GestureDetector(
+                                      onTap: () => viewModel.removeImage(index),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.error,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.close_rounded,
+                                          size: 14,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
+                        ),
 
-                          Gap.h(16),
-
-                          /// Color
-                          Expanded(
-                            child: _buildDropdown(
-                              context: context,
-                              label: 'Color',
-                              value: viewModel.selectedColor,
-                              items: carColors,
-                              onChanged: (String? newValue) {
-                                viewModel.setColor(newValue);
-                              },
+                      /// Take Photo & Pick from Gallery
+                      if (viewModel.selectedImages.length < 5)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildImageSourceButton(
+                                icon: Icons.camera_alt_outlined,
+                                label: 'Take Photo',
+                                onTap: viewModel.takePhoto,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            Gap.h(12),
+                            Expanded(
+                              child: _buildImageSourceButton(
+                                icon: Icons.photo_library_outlined,
+                                label: 'Gallery',
+                                onTap: viewModel.pickImages,
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   ),
 
@@ -542,29 +361,62 @@ class CarRegistrationContent extends StatelessWidget {
                     ),
                   ],
 
-                  Gap.v(28),
+                  Gap.v(32),
 
-                  /// Verify Button
+                  /// Register Button
                   CustomButton(
-                    text: viewModel.isLoading
-                        ? 'Registering...'
-                        : 'Register Car',
-                    onPressed: viewModel.isLoading
-                        ? () {}
-                        : () {
-                            viewModel.saveCarData(
-                              onSuccess: () {
-                                onNext?.call();
-                              },
-                              onError: (error) {
-                                // Error is already set in viewModel.errorMessage and will be displayed on screen
-                              },
-                            );
-                          },
+                    text:
+                        viewModel.isLoading ? 'Registering...' : 'Register Car',
+                    onPressed:
+                        viewModel.isLoading
+                            ? () {}
+                            : () {
+                              LoadingDialog.show(
+                                context,
+                                message: 'Registering car...',
+                              );
+                              viewModel.saveCarData(
+                                onSuccess: () {
+                                  if (context.mounted) {
+                                    LoadingDialog.hide(context);
+                                    final status =
+                                        viewModel.lastRegistrationStatus;
+                                    if (status == 'pending') {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'your car is goes to admin pending approvel',
+                                          ),
+                                          backgroundColor:
+                                              AppColors.primaryBlue,
+                                        ),
+                                      );
+                                    }
+                                  }
+                                  onNext?.call();
+                                },
+                                onError: (_) {
+                                  if (context.mounted)
+                                    LoadingDialog.hide(context);
+                                },
+                                onAlreadyRegisteredByOther: (carData) {
+                                  if (context.mounted)
+                                    LoadingDialog.hide(context);
+                                  _showCarDetailsDialog(context, carData);
+                                },
+                                onAlreadyRegisteredBySelf: () {
+                                  if (context.mounted)
+                                    LoadingDialog.hide(context);
+                                  _showAlreadyRegisteredBySelfDialog(context);
+                                },
+                              );
+                            },
                     backgroundColor: AppColors.primaryBlue,
                     textColor: AppColors.white,
-                    borderRadius: 10.adaptSize,
-                    height: 50.v,
+                    borderRadius: 12.adaptSize,
+                    height: 52.v,
                     width: double.infinity,
                     fontSize: 16.fSize,
                     fontWeight: FontWeight.bold,
@@ -575,11 +427,11 @@ class CarRegistrationContent extends StatelessWidget {
 
                   /// Back Button
                   CustomButton(
-                    text: 'Back to Phone',
-                    onPressed: onBack ?? () {},
-                    backgroundColor: AppColors.cardBackground,
-                    textColor: AppColors.textPrimary,
-                    borderRadius: 10.adaptSize,
+                    text: 'Back',
+                    onPressed: onBack ?? () => Navigator.pop(context),
+                    backgroundColor: Colors.transparent,
+                    textColor: AppColors.textSecondary,
+                    borderRadius: 12.adaptSize,
                     height: 48.v,
                     width: double.infinity,
                     fontSize: 15.fSize,
@@ -594,4 +446,212 @@ class CarRegistrationContent extends StatelessWidget {
       },
     );
   }
+
+  Widget _buildImageSourceButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.adaptSize),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 14.v),
+        decoration: BoxDecoration(
+          color: AppColors.textFieldFillColor,
+          borderRadius: BorderRadius.circular(12.adaptSize),
+          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: AppColors.primaryBlue, size: 24.adaptSize),
+            Gap.v(6),
+            AppText(
+              label,
+              size: 12.fSize,
+              color: AppColors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Show car details popup when car is already registered by another user
+void _showCarDetailsDialog(BuildContext context, Map<String, dynamic> carData) {
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder:
+        (ctx) => CarDetailsPopup(
+          carData: carData,
+          isOwnCar: false,
+          message:
+              'This car already exists. You can chat with the registered owner.',
+          onStartChat: () {
+            Navigator.pop(ctx);
+            _handleStartChat(context, carData);
+          },
+          onClose: () => Navigator.pop(ctx),
+        ),
+  );
+}
+
+/// Start chat with car owner
+Future<void> _handleStartChat(
+  BuildContext context,
+  Map<String, dynamic> carData,
+) async {
+  final ownerId = carData['ownerId'] as String?;
+  if (ownerId == null) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: AppText('Owner information not found', color: Colors.white),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+    return;
+  }
+
+  // Show loading dialog
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder:
+        (ctx) => Center(
+          child: Container(
+            padding: EdgeInsets.all(24.adaptSize),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(16.adaptSize),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.primaryBlue),
+                Gap.v(16),
+                AppText('Starting chat...', color: AppColors.textPrimary),
+              ],
+            ),
+          ),
+        ),
+  );
+
+  try {
+    final chatService = ChatService();
+    final conversation = await chatService.getOrCreateConversation(
+      otherUserId: ownerId,
+    );
+
+    if (!context.mounted) return;
+    Navigator.pop(context); // Close loading dialog
+
+    if (conversation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: AppText(
+            'Unable to create conversation',
+            color: Colors.white,
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    // Send car details as first message
+    final plate = (carData['plateNumber'] ?? 'N/A').toString().toUpperCase();
+    final make = carData['make'] ?? 'Unknown';
+    final model = carData['model'] ?? 'Unknown';
+    final year = carData['year']?.toString() ?? 'N/A';
+    final color = carData['color'] ?? 'Unknown';
+    final firstMessage =
+        '🚗 I found your car: $plate — $make $model ($year, $color)';
+
+    await chatService.sendMessage(
+      conversationId: conversation.id,
+      text: firstMessage,
+    );
+
+    // Get owner profile
+    final profile = await chatService.getUserProfile(ownerId);
+
+    if (!context.mounted) return;
+
+    // Navigate to chat detail
+    Navigator.pushNamed(
+      context,
+      RouteNames.chatDetail,
+      arguments: ChatDetailArgs(
+        conversationId: conversation.id,
+        otherUserId: ownerId,
+        otherUserName: profile['name'] ?? 'Car Owner',
+        otherUserPhotoUrl: profile['photoUrl'],
+      ),
+    );
+  } catch (e) {
+    if (context.mounted && Navigator.canPop(context)) {
+      Navigator.pop(context); // Close loading dialog
+    }
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: AppText(
+            'Error starting chat: ${e.toString()}',
+            color: Colors.white,
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+}
+
+void _showAlreadyRegisteredBySelfDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24.adaptSize),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.info_outline_rounded,
+                color: AppColors.primaryBlue,
+                size: 28.fSize,
+              ),
+              Gap.h(12),
+              AppText(
+                'Already registered',
+                size: 18.fSize,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ],
+          ),
+          content: AppText(
+            'You already have this car registered with this plate number.',
+            size: 14.fSize,
+            color: AppColors.textSecondary,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: AppText(
+                'OK',
+                size: 16.fSize,
+                color: AppColors.primaryBlue,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+  );
 }

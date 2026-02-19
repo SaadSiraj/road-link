@@ -15,6 +15,7 @@ class PendingCarRequest {
   final String color;
   final String status;
   final DateTime? createdAt;
+  final List<String> imageUrls;
 
   PendingCarRequest({
     required this.userId,
@@ -28,13 +29,27 @@ class PendingCarRequest {
     required this.color,
     required this.status,
     this.createdAt,
+    this.imageUrls = const [],
   });
 
   String get carName => '$make $model';
-  
+
   String get formattedDate {
     if (createdAt == null) return 'Unknown date';
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     final day = createdAt!.day.toString().padLeft(2, '0');
     final month = months[createdAt!.month - 1];
     final year = createdAt!.year.toString();
@@ -55,6 +70,7 @@ class PendingCarRequest {
       color: map['color'] as String? ?? '',
       status: map['status'] as String? ?? 'pending',
       createdAt: timestamp?.toDate(),
+      imageUrls: List<String>.from(map['imageUrls'] ?? []),
     );
   }
 }
@@ -74,7 +90,8 @@ class PendingCarRequestsViewModel extends ChangeNotifier {
 
     try {
       final requests = await _adminService.getPendingCarRequests();
-      pendingRequests = requests.map((map) => PendingCarRequest.fromMap(map)).toList();
+      pendingRequests =
+          requests.map((map) => PendingCarRequest.fromMap(map)).toList();
       errorMessage = null;
     } catch (e) {
       errorMessage = 'Failed to load pending requests. Please try again.';
@@ -100,16 +117,13 @@ class PendingCarRequestsViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _adminService.approveCarRequest(
-        userId: userId,
-        carId: carId,
-      );
-      
+      await _adminService.approveCarRequest(userId: userId, carId: carId);
+
       // Remove the approved request from the list
       pendingRequests.removeWhere(
         (request) => request.userId == userId && request.carId == carId,
       );
-      
+
       isLoading = false;
       errorMessage = null;
       notifyListeners();
@@ -132,16 +146,13 @@ class PendingCarRequestsViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _adminService.rejectCarRequest(
-        userId: userId,
-        carId: carId,
-      );
-      
+      await _adminService.rejectCarRequest(userId: userId, carId: carId);
+
       // Remove the rejected request from the list
       pendingRequests.removeWhere(
         (request) => request.userId == userId && request.carId == carId,
       );
-      
+
       isLoading = false;
       errorMessage = null;
       notifyListeners();
@@ -154,4 +165,3 @@ class PendingCarRequestsViewModel extends ChangeNotifier {
     }
   }
 }
-

@@ -4,17 +4,14 @@ import 'package:roadlink/core/utils/size_utils.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/shared/app_button.dart';
 import '../../../core/shared/app_text.dart';
+import '../../core/routes/app_router.dart';
 import '../../core/routes/routes_name.dart';
 
 class AuthSelectionView extends StatelessWidget {
   final VoidCallback? onSignIn;
   final VoidCallback? onRegister;
 
-  const AuthSelectionView({
-    super.key,
-    this.onSignIn,
-    this.onRegister,
-  });
+  const AuthSelectionView({super.key, this.onSignIn, this.onRegister});
 
   @override
   Widget build(BuildContext context) {
@@ -39,11 +36,7 @@ class AuthSelectionContent extends StatelessWidget {
   final VoidCallback? onSignIn;
   final VoidCallback? onRegister;
 
-  const AuthSelectionContent({
-    super.key,
-    this.onSignIn,
-    this.onRegister,
-  });
+  const AuthSelectionContent({super.key, this.onSignIn, this.onRegister});
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +47,7 @@ class AuthSelectionContent extends StatelessWidget {
 
         /// Welcome Title
         AppText(
-          'Welcome to Car',
+          'Welcome to Platoscan',
           size: 36.fSize,
           fontWeight: FontWeight.bold,
           color: AppColors.textPrimary,
@@ -67,7 +60,7 @@ class AuthSelectionContent extends StatelessWidget {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 30.h),
           child: AppText(
-            'Connect with drivers and passengers\nfor safe and convenient rides',
+            'Connect using car plates\nMessage people by their licence plate in seconds.',
             size: 16.fSize,
             color: AppColors.textSecondary,
             align: TextAlign.center,
@@ -108,9 +101,11 @@ class AuthSelectionContent extends StatelessWidget {
               /// Register Button
               CustomButton(
                 text: 'Create Account',
-                onPressed: onRegister ?? () {
-                  Navigator.pushNamed(context, RouteNames.registration);
-                },
+                onPressed:
+                    onRegister ??
+                    () {
+                      Navigator.pushNamed(context, RouteNames.registration);
+                    },
                 backgroundColor: AppColors.primaryBlue,
                 textColor: AppColors.white,
                 borderRadius: 12.adaptSize,
@@ -125,9 +120,11 @@ class AuthSelectionContent extends StatelessWidget {
               /// Sign In Button
               CustomButton(
                 text: 'Sign In',
-                onPressed: onSignIn ?? () {
-                  Navigator.pushNamed(context, RouteNames.signIn);
-                },
+                onPressed:
+                    onSignIn ??
+                    () {
+                      Navigator.pushNamed(context, RouteNames.signIn);
+                    },
                 backgroundColor: AppColors.cardBackground,
                 textColor: AppColors.textPrimary,
                 borderRadius: 12.adaptSize,
@@ -146,36 +143,37 @@ class AuthSelectionContent extends StatelessWidget {
         /// Terms and Privacy
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 20.h),
-          child: RichText(
-            textAlign: TextAlign.center,
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: 13.fSize,
-                color: AppColors.textSecondary,
-                height: 1.5,
+          child: GestureDetector(
+            onTap: () {
+              AppRouter.push(context, RouteNames.termsCondition);
+            },
+            child: RichText(
+              textAlign: TextAlign.center,
+              text: TextSpan(
+                style: TextStyle(
+                  fontSize: 13.fSize,
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                ),
+                children: [
+                  const TextSpan(text: 'By continuing, you agree to our '),
+                  TextSpan(
+                    text: 'Terms of Service',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const TextSpan(text: ' and '),
+                  TextSpan(
+                    text: 'Privacy Policy',
+                    style: TextStyle(
+                      color: AppColors.primaryBlue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                const TextSpan(
-                  text: 'By continuing, you agree to our ',
-                ),
-                TextSpan(
-                  text: 'Terms of Service',
-                  style: TextStyle(
-                    color: AppColors.primaryBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const TextSpan(
-                  text: ' and ',
-                ),
-                TextSpan(
-                  text: 'Privacy Policy',
-                  style: TextStyle(
-                    color: AppColors.primaryBlue,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
             ),
           ),
         ),

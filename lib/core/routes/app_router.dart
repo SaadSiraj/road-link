@@ -4,6 +4,9 @@ import '../../module/admin/admin_dashboard_view.dart';
 import '../../module/admin/pending_registration_car_view.dart';
 import '../../module/admin/user_list_view.dart';
 import '../../module/admin/car_list_view.dart';
+import '../../module/legal/privacy_policy_view.dart';
+import '../../module/legal/terms_condition_view.dart';
+import '../../module/legal/help_center_view.dart';
 import '../../module/splash/splash_view.dart';
 import '../../module/auth/auth_selection_view.dart';
 import '../../module/auth/signin_view.dart.dart';
@@ -13,9 +16,11 @@ import '../../module/auth/register/car_registration_view.dart';
 import '../../module/auth/register/verify_code_view.dart';
 import '../../module/auth/register/complete_profile_view.dart';
 import '../../module/user/dashboard/home_dashboard_view.dart';
+import '../../module/user/dashboard/plate_capture_view.dart';
 import '../../module/user/chat/chat_detail_args.dart';
 import '../../module/user/chat/chat_detail_view.dart';
 import '../../module/user/base_navigation/base_navigation_view.dart';
+import '../../module/user/onboarding/onboarding_view.dart';
 import '../../module/user/profile/profile_view.dart';
 import '../../module/user/profile/registrations_view.dart';
 import '../../module/user/profile/edit_profile_view.dart';
@@ -31,6 +36,9 @@ class AppRouter {
       // Splash
       case RouteNames.splash:
         builder = (_) => const SplashView();
+        break;
+      case RouteNames.onboarding:
+        builder = (_) => const OnboardingView();
         break;
       
       // Auth
@@ -62,6 +70,9 @@ class AppRouter {
       case RouteNames.homeDashboard:
         builder = (_) => const HomeDashboardView();
         break;
+      case RouteNames.plateCapture:
+        builder = (_) => const PlateCaptureView();
+        break;
       case RouteNames.baseNavigation:
         builder = (_) => const BaseNavigation();
         break;
@@ -84,6 +95,15 @@ class AppRouter {
         break;
       case RouteNames.privacyPermissions:
         builder = (_) => const PrivacyPermissionsView();
+        break;
+      case RouteNames.termsCondition:
+        builder = (_) => const TermsConditionView();
+        break;
+      case RouteNames.privacyPolicy:
+        builder = (_) => const PrivacyPolicyView();
+        break;
+      case RouteNames.helpCenter:
+        builder = (_) => const HelpCenterView();
         break;
 
       // Admin

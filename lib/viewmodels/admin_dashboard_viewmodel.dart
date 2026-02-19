@@ -15,6 +15,18 @@ class AdminDashboardViewModel extends ChangeNotifier {
   int approvedCars = 0;
   int rejectedCars = 0;
 
+  // Filter
+  String selectedFilter = 'All Time';
+  final List<String> filters = ['Today', 'This Week', 'This Month', 'All Time'];
+
+  /// Set filter and reload data
+  void setFilter(String filter) {
+    if (selectedFilter != filter) {
+      selectedFilter = filter;
+      loadDashboardStats();
+    }
+  }
+
   /// Load all dashboard statistics
   Future<void> loadDashboardStats() async {
     isLoading = true;
@@ -22,8 +34,32 @@ class AdminDashboardViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final stats = await _adminService.getDashboardStats();
-      
+      DateTime? startDate;
+      final now = DateTime.now();
+
+      switch (selectedFilter) {
+        case 'Today':
+          startDate = DateTime(now.year, now.month, now.day);
+          break;
+        case 'This Week':
+          // Start of the week (Monday)
+          startDate = DateTime(
+            now.year,
+            now.month,
+            now.day - (now.weekday - 1),
+          );
+          break;
+        case 'This Month':
+          startDate = DateTime(now.year, now.month, 1);
+          break;
+        case 'All Time':
+        default:
+          startDate = null;
+          break;
+      }
+
+      final stats = await _adminService.getDashboardStats(startDate: startDate);
+
       totalUsers = stats['totalUsers'] ?? 0;
       totalCars = stats['totalCars'] ?? 0;
       pendingRequests = stats['pendingRequests'] ?? 0;
@@ -50,4 +86,3 @@ class AdminDashboardViewModel extends ChangeNotifier {
     await loadDashboardStats();
   }
 }
-

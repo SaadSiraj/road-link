@@ -102,3 +102,7 @@ class Gap {
     return SizedBox(height: value.v);
   }
 }
+
+extension BorderRadiusExtension on num {
+  BorderRadius get r => BorderRadius.circular(toDouble());
+}

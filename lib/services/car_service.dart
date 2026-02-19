@@ -8,18 +8,15 @@ class CarService {
 
   Future<int> getCarCount(String uid) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('cars')
-          .get();
+      final snapshot =
+          await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('cars')
+              .get();
       return snapshot.docs.length;
     } catch (e) {
-      _logEvent(
-        uid: uid,
-        event: 'get_car_count_error',
-        detail: e.toString(),
-      );
+      _logEvent(uid: uid, event: 'get_car_count_error', detail: e.toString());
       return 0;
     }
   }
@@ -31,10 +28,11 @@ class CarService {
     required String model,
     required String year,
     required String color,
+    List<String> imageUrls = const [],
   }) async {
     // Check current car count to determine status
     final carCount = await getCarCount(uid);
-    
+
     // If user has 2 or more cars, new registration goes to pending status
     // If user has less than 2 cars, new registration is approved
     final status = carCount >= maxCars ? 'pending' : 'approved';
@@ -57,6 +55,7 @@ class CarService {
       'model': model,
       'year': year,
       'color': color,
+      'imageUrls': imageUrls,
       'status': status,
       'createdAt': FieldValue.serverTimestamp(),
     };
@@ -67,20 +66,22 @@ class CarService {
     _logEvent(
       uid: uid,
       event: 'car_data_saved',
-      detail: '$make $model ($year) - Status: $status',
+      detail:
+          '$make $model ($year) - Status: $status - Images: ${imageUrls.length}',
     );
   }
 
   Future<bool> _checkPlateNumberExists(String uid, String plateNumber) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('cars')
-          .where('plateNumber', isEqualTo: plateNumber.toUpperCase().trim())
-          .limit(1)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('cars')
+              .where('plateNumber', isEqualTo: plateNumber.toUpperCase().trim())
+              .limit(1)
+              .get();
+
       return snapshot.docs.isNotEmpty;
     } catch (e) {
       _logEvent(
@@ -94,24 +95,21 @@ class CarService {
 
   Future<List<Map<String, dynamic>>> getAllCars(String uid) async {
     try {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('cars')
-          .orderBy('createdAt', descending: true)
-          .get();
-      
+      final snapshot =
+          await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('cars')
+              .orderBy('createdAt', descending: true)
+              .get();
+
       return snapshot.docs.map((doc) {
         final data = doc.data();
         data['id'] = doc.id; // Include document ID
         return data;
       }).toList();
     } catch (e) {
-      _logEvent(
-        uid: uid,
-        event: 'get_all_cars_error',
-        detail: e.toString(),
-      );
+      _logEvent(uid: uid, event: 'get_all_cars_error', detail: e.toString());
       return [];
     }
   }
@@ -122,11 +120,7 @@ class CarService {
       // Return the first car for backward compatibility
       return cars.isNotEmpty ? cars.first : null;
     } catch (e) {
-      _logEvent(
-        uid: uid,
-        event: 'car_data_fetch_error',
-        detail: e.toString(),
-      );
+      _logEvent(uid: uid, event: 'car_data_fetch_error', detail: e.toString());
       return null;
     }
   }
@@ -139,19 +133,53 @@ class CarService {
           .collection('cars')
           .doc(carId)
           .delete();
-      
-      _logEvent(
-        uid: uid,
-        event: 'car_deleted',
-        detail: carId,
-      );
+
+      _logEvent(uid: uid, event: 'car_deleted', detail: carId);
     } catch (e) {
-      _logEvent(
-        uid: uid,
-        event: 'car_delete_error',
-        detail: e.toString(),
-      );
+      _logEvent(uid: uid, event: 'car_delete_error', detail: e.toString());
       rethrow;
+    }
+  }
+
+  /// Search for a car by plate number across all users
+  /// Returns car data with ownerId but without personal owner information
+  Future<Map<String, dynamic>?> searchCarByPlateNumber(
+    String plateNumber,
+  ) async {
+    try {
+      final normalizedPlate = plateNumber.toUpperCase().trim();
+
+      // Query all users' cars collection for the plate number
+      final usersSnapshot = await _firestore.collection('users').get();
+
+      for (final userDoc in usersSnapshot.docs) {
+        final carsSnapshot =
+            await userDoc.reference
+                .collection('cars')
+                .where('plateNumber', isEqualTo: normalizedPlate)
+                .where(
+                  'status',
+                  isEqualTo: 'approved',
+                ) // Only search approved cars
+                .limit(1)
+                .get();
+
+        if (carsSnapshot.docs.isNotEmpty) {
+          final carDoc = carsSnapshot.docs.first;
+          final carData = carDoc.data();
+
+          // Add ownerId and carId but don't include personal information
+          return {...carData, 'ownerId': userDoc.id, 'carId': carDoc.id};
+        }
+      }
+
+      return null; // Car not found
+    } catch (e) {
+      developer.log(
+        'CarService search_car_error: ${e.toString()}',
+        name: 'CarService',
+      );
+      return null;
     }
   }
 
@@ -163,15 +191,10 @@ class CarService {
     );
   }
 
-  void _logEvent({
-    required String uid,
-    required String event,
-    String? detail,
-  }) {
+  void _logEvent({required String uid, required String event, String? detail}) {
     developer.log(
       'CarService $event for $uid${detail != null ? ': $detail' : ''}',
       name: 'CarService',
     );
   }
 }
-

@@ -103,11 +103,15 @@ class DashboardService {
     return formatCarInfo(cars.first);
   }
 
-  /// Get scans count (placeholder for future implementation)
+  /// Get scans count from user document (plate searches / lookups).
   Future<int> getScansCount(String uid) async {
     try {
-      // TODO: Implement scans count logic when scans collection is available
-      // For now, return 0
+      final doc = await _firestore.collection('users').doc(uid).get();
+      final data = doc.data();
+      if (data == null) return 0;
+      final v = data['scansCount'];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
       return 0;
     } catch (e) {
       _logEvent(event: 'get_scans_count_error', detail: e.toString());
@@ -115,12 +119,25 @@ class DashboardService {
     }
   }
 
-  /// Get chats count (placeholder for future implementation)
+  /// Increment scans count (call when user does a plate search).
+  Future<void> incrementScansCount(String uid) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'scansCount': FieldValue.increment(1),
+      });
+    } catch (e) {
+      _logEvent(event: 'increment_scans_count_error', detail: e.toString());
+    }
+  }
+
+  /// Get chats count: number of conversations the user is in.
   Future<int> getChatsCount(String uid) async {
     try {
-      // TODO: Implement chats count logic when chats collection is available
-      // For now, return 0
-      return 0;
+      final snapshot = await _firestore
+          .collection('conversations')
+          .where('participantIds', arrayContains: uid)
+          .get();
+      return snapshot.docs.length;
     } catch (e) {
       _logEvent(event: 'get_chats_count_error', detail: e.toString());
       return 0;

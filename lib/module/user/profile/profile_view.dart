@@ -11,6 +11,7 @@ import '../../../core/shared/app_appbar.dart';
 import '../../../core/shared/app_button.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../services/auth_service.dart';
+import '../dashboard/car_details_popup.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -326,88 +327,93 @@ class _ProfileViewState extends State<ProfileView> {
                   color: AppColors.textPrimary,
                 ),
 
+                // Gap.v(12),
+
+                // /// Online pill
+                // Container(
+                //   padding: EdgeInsets.symmetric(horizontal: 14.h, vertical: 6.v),
+                //   decoration: BoxDecoration(
+                //     color: AppColors.success.withOpacity(0.2),
+                //     borderRadius: BorderRadius.circular(20),
+                //   ),
+                //   child: Row(
+                //     mainAxisSize: MainAxisSize.min,
+                //     children: [
+                //       Container(
+                //         width: 8.adaptSize,
+                //         height: 8.adaptSize,
+                //         decoration: const BoxDecoration(
+                //           color: AppColors.success,
+                //           shape: BoxShape.circle,
+                //         ),
+                //       ),
+                //       Gap.h(6),
+                //       AppText(
+                //         'Online',
+                //         size: 12.fSize,
+                //         color: AppColors.success,
+                //         fontWeight: FontWeight.w600,
+                //       ),
+                //     ],
+                //   ),
+                // ),
+
                 Gap.v(12),
 
-                /// Online pill
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 14.h, vertical: 6.v),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8.adaptSize,
-                        height: 8.adaptSize,
-                        decoration: const BoxDecoration(
-                          color: AppColors.success,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      Gap.h(6),
-                      AppText(
-                        'Online',
-                        size: 12.fSize,
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ],
-                  ),
-                ),
-
-                Gap.v(12),
-
-                /// Car info
-                if (_uid != null)
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(_uid)
-                        .collection('cars')
-                        .orderBy('createdAt', descending: true)
-                        .limit(1)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const SizedBox.shrink();
-                      }
-
-                      if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-
-                      final car = snapshot.data!.docs.first.data();
-                      final make = car['make'] as String? ?? '';
-                      final model = car['model'] as String? ?? '';
-                      final plateNumber = car['plateNumber'] as String? ?? '';
-                      
-                      if (make.isEmpty && model.isEmpty && plateNumber.isEmpty) {
-                        return const SizedBox.shrink();
-                      }
-
-                      final carInfo = '$make $model${plateNumber.isNotEmpty ? ' | $plateNumber' : ''}';
-
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.directions_car,
-                            size: 16.fSize,
-                            color: AppColors.textSecondary,
-                          ),
-                          Gap.h(6),
-                          AppText(
-                            carInfo,
-                            size: 13.fSize,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                /// My Car - same spec as home dashboard
+                // if (_uid != null)
+                //   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                //     stream: FirebaseFirestore.instance
+                //         .collection('users')
+                //         .doc(_uid)
+                //         .collection('cars')
+                //         .orderBy('createdAt', descending: true)
+                //         .limit(1)
+                //         .snapshots(),
+                //     builder: (context, snapshot) {
+                //       if (snapshot.connectionState == ConnectionState.waiting) {
+                //         return const SizedBox.shrink();
+                //       }
+                //       if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                //         return const SizedBox.shrink();
+                //       }
+                //       final carData = Map<String, dynamic>.from(
+                //         snapshot.data!.docs.first.data(),
+                //       );
+                //       return Container(
+                //         width: double.infinity,
+                //         padding: EdgeInsets.all(20.adaptSize),
+                //         decoration: BoxDecoration(
+                //           color: AppColors.cardBackground,
+                //           borderRadius: BorderRadius.circular(16.adaptSize),
+                //           border: Border.all(color: AppColors.border, width: 1),
+                //         ),
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             Row(
+                //               children: [
+                //                 Icon(
+                //                   Icons.directions_car,
+                //                   size: 20.fSize,
+                //                   color: AppColors.primaryBlue,
+                //                 ),
+                //                 Gap.h(10),
+                //                 AppText(
+                //                   'My Car',
+                //                   size: 16.fSize,
+                //                   fontWeight: FontWeight.bold,
+                //                   color: AppColors.textPrimary,
+                //                 ),
+                //               ],
+                //             ),
+                //             Gap.v(16),
+                //             CarSpecContent(carData: carData),
+                //           ],
+                //         ),
+                //       );
+                //     },
+                //   ),
 
                 Gap.v(28),
 
@@ -535,7 +541,7 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   child: InkWell(
                     onTap: () {
-                      AppRouter.push(context, RouteNames.privacyPermissions);
+                      AppRouter.push(context, RouteNames.privacyPolicy);
                     },
                     borderRadius: BorderRadius.circular(16.adaptSize),
                     child: Padding(
@@ -561,7 +567,7 @@ class _ProfileViewState extends State<ProfileView> {
                           Gap.h(12),
                           Expanded(
                             child: AppText(
-                              'Privacy & Permissions',
+                              'Privacy & policy',
                               size: 15.fSize,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
@@ -579,6 +585,63 @@ class _ProfileViewState extends State<ProfileView> {
                 ),
 
                 Gap.v(24),
+
+                      Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBackground,
+                    borderRadius: BorderRadius.circular(16.adaptSize),
+                    border: Border.all(color: AppColors.border, width: 1),
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      AppRouter.push(context, RouteNames.termsCondition);
+                    },
+                    borderRadius: BorderRadius.circular(16.adaptSize),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.h,
+                        vertical: 16.v,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40.adaptSize,
+                            height: 40.adaptSize,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBlue.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.description_outlined,
+                              color: AppColors.primaryBlue,
+                              size: 20.fSize,
+                            ),
+                          ),
+                          Gap.h(12),
+                          Expanded(
+                            child: AppText(
+                              'Terms & Conditions',
+                              size: 15.fSize,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textSecondary,
+                            size: 24.fSize,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                Gap.v(24),
+
+
+                
 
                 /// Logout Button
                 CustomButton(

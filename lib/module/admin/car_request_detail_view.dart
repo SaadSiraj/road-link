@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
@@ -8,7 +9,7 @@ import '../../../viewmodels/pending_car_requests_viewmodel.dart';
 
 class CarRequestDetailsView extends StatefulWidget {
   final PendingCarRequest? request;
-  
+
   const CarRequestDetailsView({super.key, this.request});
 
   @override
@@ -61,10 +62,55 @@ class _CarRequestDetailsViewState extends State<CarRequestDetailsView> {
                   _InfoRow('Car Name', widget.request?.carName ?? 'N/A'),
                   _InfoRow('Year', widget.request?.year ?? 'N/A'),
                   _InfoRow('Color', widget.request?.color ?? 'N/A'),
-                  _InfoRow('Number Plate', widget.request?.plateNumber ?? 'N/A'),
+                  _InfoRow(
+                    'Number Plate',
+                    widget.request?.plateNumber ?? 'N/A',
+                  ),
                 ],
               ),
             ),
+
+            Gap.v(16),
+
+            /// 🔹 CAR IMAGES
+            if (widget.request?.imageUrls.isNotEmpty ?? false)
+              _SectionCard(
+                title: 'Car Images',
+                child: SizedBox(
+                  height: 120.adaptSize,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.request!.imageUrls.length,
+                    separatorBuilder: (_, __) => Gap.h(12),
+                    itemBuilder: (context, index) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(10.adaptSize),
+                        child: Container(
+                          width: 120.adaptSize,
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundSoft,
+                            borderRadius: BorderRadius.circular(10.adaptSize),
+                          ),
+                          child: CachedNetworkImage(
+                            imageUrl: widget.request!.imageUrls[index],
+                            fit: BoxFit.cover,
+                            placeholder:
+                                (context, url) => Container(
+                                  color: AppColors.backgroundSoft,
+                                  child: const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                ),
+                            errorWidget:
+                                (context, url, error) =>
+                                    const Icon(Icons.error),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
 
             Gap.v(24),
 
@@ -72,7 +118,7 @@ class _CarRequestDetailsViewState extends State<CarRequestDetailsView> {
             Consumer<PendingCarRequestsViewModel>(
               builder: (context, viewModel, child) {
                 final isProcessing = _isProcessing || viewModel.isLoading;
-                
+
                 return Row(
                   children: [
                     Expanded(
@@ -81,51 +127,54 @@ class _CarRequestDetailsViewState extends State<CarRequestDetailsView> {
                         backgroundColor: AppColors.success,
                         textColor: Colors.white,
                         isDisabled: isProcessing || widget.request == null,
-                        onPressed: isProcessing || widget.request == null
-                            ? () {}
-                            : () async {
-                                if (widget.request == null) return;
-                                
-                                setState(() {
-                                  _isProcessing = true;
-                                });
+                        onPressed:
+                            isProcessing || widget.request == null
+                                ? () {}
+                                : () async {
+                                  if (widget.request == null) return;
 
-                                final success = await viewModel.approveRequest(
-                                  userId: widget.request!.userId,
-                                  carId: widget.request!.carId,
-                                );
+                                  setState(() {
+                                    _isProcessing = true;
+                                  });
 
-                                if (!mounted) return;
+                                  final success = await viewModel
+                                      .approveRequest(
+                                        userId: widget.request!.userId,
+                                        carId: widget.request!.carId,
+                                      );
 
-                                setState(() {
-                                  _isProcessing = false;
-                                });
+                                  if (!mounted) return;
 
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: AppText(
-                                        'Car request approved successfully',
-                                        color: AppColors.white,
+                                  setState(() {
+                                    _isProcessing = false;
+                                  });
+
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: AppText(
+                                          'Car request approved successfully',
+                                          color: AppColors.white,
+                                        ),
+                                        backgroundColor: AppColors.success,
+                                        duration: const Duration(seconds: 2),
                                       ),
-                                      backgroundColor: AppColors.success,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                  Navigator.pop(context);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: AppText(
-                                        viewModel.errorMessage ?? 'Failed to approve request',
-                                        color: AppColors.white,
+                                    );
+                                    Navigator.pop(context);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: AppText(
+                                          viewModel.errorMessage ??
+                                              'Failed to approve request',
+                                          color: AppColors.white,
+                                        ),
+                                        backgroundColor: AppColors.error,
+                                        duration: const Duration(seconds: 3),
                                       ),
-                                      backgroundColor: AppColors.error,
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              },
+                                    );
+                                  }
+                                },
                       ),
                     ),
                     Gap.h(16),
@@ -135,51 +184,53 @@ class _CarRequestDetailsViewState extends State<CarRequestDetailsView> {
                         backgroundColor: Colors.red,
                         textColor: Colors.white,
                         isDisabled: isProcessing || widget.request == null,
-                        onPressed: isProcessing || widget.request == null
-                            ? () {}
-                            : () async {
-                                if (widget.request == null) return;
-                                
-                                setState(() {
-                                  _isProcessing = true;
-                                });
+                        onPressed:
+                            isProcessing || widget.request == null
+                                ? () {}
+                                : () async {
+                                  if (widget.request == null) return;
 
-                                final success = await viewModel.rejectRequest(
-                                  userId: widget.request!.userId,
-                                  carId: widget.request!.carId,
-                                );
+                                  setState(() {
+                                    _isProcessing = true;
+                                  });
 
-                                if (!mounted) return;
-
-                                setState(() {
-                                  _isProcessing = false;
-                                });
-
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: AppText(
-                                        'Car request rejected',
-                                        color: AppColors.white,
-                                      ),
-                                      backgroundColor: Colors.red,
-                                      duration: const Duration(seconds: 2),
-                                    ),
+                                  final success = await viewModel.rejectRequest(
+                                    userId: widget.request!.userId,
+                                    carId: widget.request!.carId,
                                   );
-                                  Navigator.pop(context);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: AppText(
-                                        viewModel.errorMessage ?? 'Failed to reject request',
-                                        color: AppColors.white,
+
+                                  if (!mounted) return;
+
+                                  setState(() {
+                                    _isProcessing = false;
+                                  });
+
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: AppText(
+                                          'Car request rejected',
+                                          color: AppColors.white,
+                                        ),
+                                        backgroundColor: Colors.red,
+                                        duration: const Duration(seconds: 2),
                                       ),
-                                      backgroundColor: AppColors.error,
-                                      duration: const Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              },
+                                    );
+                                    Navigator.pop(context);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: AppText(
+                                          viewModel.errorMessage ??
+                                              'Failed to reject request',
+                                          color: AppColors.white,
+                                        ),
+                                        backgroundColor: AppColors.error,
+                                        duration: const Duration(seconds: 3),
+                                      ),
+                                    );
+                                  }
+                                },
                       ),
                     ),
                   ],
@@ -191,7 +242,6 @@ class _CarRequestDetailsViewState extends State<CarRequestDetailsView> {
       ),
     );
   }
-
 }
 
 /// 🔹 SECTION CARD

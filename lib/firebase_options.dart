@@ -50,19 +50,19 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBS4fp1D9PkBL-im-qzAKUQY78zwKyNmKU',
-    appId: '1:214357187230:android:da51253f6886b09cc0398f',
-    messagingSenderId: '214357187230',
-    projectId: 'roadlink-f91ef',
-    storageBucket: 'roadlink-f91ef.firebasestorage.app',
+    apiKey: 'AIzaSyAi5nH1LLkH6q4HeaGqwVUXMsBTfGdTHXg',
+    appId: '1:518827944109:android:8d1e5fec9e8033bbd67e24',
+    messagingSenderId: '518827944109',
+    projectId: 'platechat2',
+    storageBucket: 'platechat2.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAGtNtVtQykKmSBFGhULBfoHHh8GSxw8NA',
-    appId: '1:214357187230:ios:05136ea04b24cf3ac0398f',
-    messagingSenderId: '214357187230',
-    projectId: 'roadlink-f91ef',
-    storageBucket: 'roadlink-f91ef.firebasestorage.app',
+    apiKey: 'AIzaSyCCyJinA1yNE_BE4sQ9Sh6d83Yn6aBivPI',
+    appId: '1:518827944109:ios:1bfa78454409f200d67e24',
+    messagingSenderId: '518827944109',
+    projectId: 'platechat2',
+    storageBucket: 'platechat2.firebasestorage.app',
     iosBundleId: 'com.mario.roadlink',
   );
 }

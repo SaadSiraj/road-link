@@ -28,7 +28,9 @@ class _ChatHomeViewState extends State<ChatHomeView> {
 
   @override
   void dispose() {
-    context.read<ChatHomeViewModel>().dispose();
+    // Do NOT dispose the view model here. It is provided at app level and must
+    // keep its Firestore stream active so the unread badge updates in real time
+    // (e.g. when a new message arrives while the user is on another tab).
     super.dispose();
   }
 
@@ -45,69 +47,76 @@ class _ChatHomeViewState extends State<ChatHomeView> {
               );
             }
 
-            return SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // StreamBuilder rebuilds on every Firestore snapshot so unread badges update in real time
+            return StreamBuilder<List<ChatConversationItem>>(
+              stream: viewModel.conversationsStream,
+              initialData: viewModel.conversations,
+              builder: (context, snapshot) {
+                final items = snapshot.data ?? viewModel.conversations;
+
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppText(
-                          'Chat',
-                          size: 24.fSize,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
+                        /// Header
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            IconButton(
-                              onPressed: () {},
-                              icon: Icon(
-                                Icons.notifications_outlined,
-                                size: 24.fSize,
-                                color: AppColors.textPrimary,
-                              ),
+                            AppText(
+                              'Chat',
+                              size: 24.fSize,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
-                            Gap.h(12),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pushNamed(context, RouteNames.profile);
-                              },
-                              child: Container(
-                                width: 40.adaptSize,
-                                height: 40.adaptSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppColors.border,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: ClipOval(
-                                  child: Image.asset(
-                                    AppImages.userAvatar,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Icon(
-                                      Icons.person,
-                                      color: AppColors.textSecondary,
-                                      size: 24.fSize,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Row(
+                        //   children: [
+                        //     IconButton(
+                        //       onPressed: () {},
+                        //       icon: Icon(
+                        //         Icons.notifications_outlined,
+                        //         size: 24.fSize,
+                        //         color: AppColors.textPrimary,
+                        //       ),
+                        //     ),
+                        //     Gap.h(12),
+                        //     // GestureDetector(
+                        //     //   onTap: () {
+                        //     //     Navigator.pushNamed(context, RouteNames.profile);
+                        //     //   },
+                        //     //   child: Container(
+                        //     //     width: 40.adaptSize,
+                        //     //     height: 40.adaptSize,
+                        //     //     decoration: BoxDecoration(
+                        //     //       shape: BoxShape.circle,
+                        //     //       border: Border.all(
+                        //     //         color: AppColors.border,
+                        //     //         width: 2,
+                        //     //       ),
+                        //     //     ),
+                        //     //     child: ClipOval(
+                        //     //       child: Image.asset(
+                        //     //         AppImages.userAvatar,
+                        //     //         fit: BoxFit.cover,
+                        //     //         errorBuilder: (_, __, ___) => Icon(
+                        //     //           Icons.person,
+                        //     //           color: AppColors.textSecondary,
+                        //     //           size: 24.fSize,
+                        //     //         ),
+                        //     //       ),
+                        //     //     ),
+                        //     //   ),
+                        //     // ),
+                        //   ],
+                        // ),
                       ],
                     ),
                     Divider(color: AppColors.border, thickness: 1),
                     Gap.v(32),
 
                     /// Chat list or empty state
-                    if (viewModel.conversations.isEmpty)
+                    if (items.isEmpty)
                       Padding(
                         padding: EdgeInsets.only(top: 48.v),
                         child: Center(
@@ -137,21 +146,25 @@ class _ChatHomeViewState extends State<ChatHomeView> {
                       )
                     else
                       Column(
-                        children: viewModel.conversations
-                            .map((item) => Padding(
-                                  padding: EdgeInsets.only(bottom: 16.v),
-                                  child: _buildChatItem(
-                                    context: context,
-                                    item: item,
-                                  ),
-                                ))
+                        children: items
+                            .map(
+                              (item) => Padding(
+                                padding: EdgeInsets.only(bottom: 16.v),
+                                child: _buildChatItem(
+                                  context: context,
+                                  item: item,
+                                ),
+                              ),
+                            )
                             .toList(),
                       ),
 
                     Gap.v(100),
-                  ],
-                ),
-              ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -164,9 +177,10 @@ class _ChatHomeViewState extends State<ChatHomeView> {
     required ChatConversationItem item,
   }) {
     final lastMsg = item.conversation.lastMessageText ?? 'No messages yet';
-    final timeStr = item.conversation.lastMessageAt != null
-        ? _formatTime(item.conversation.lastMessageAt!)
-        : '';
+    final timeStr =
+        item.conversation.lastMessageAt != null
+            ? _formatTime(item.conversation.lastMessageAt!)
+            : '';
 
     return GestureDetector(
       onTap: () {
@@ -214,8 +228,9 @@ class _ChatHomeViewState extends State<ChatHomeView> {
               ),
             ),
             Gap.h(12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 AppText(
                   timeStr,
@@ -223,17 +238,17 @@ class _ChatHomeViewState extends State<ChatHomeView> {
                   color: AppColors.textSecondary,
                 ),
                 if (item.unreadCount > 0) ...[
-                  Gap.v(8),
+                  Gap.h(8),
                   Container(
-                    width: 20.adaptSize,
-                    height: 20.adaptSize,
+                    width: 24.adaptSize,
+                    height: 24.adaptSize,
                     decoration: const BoxDecoration(
                       color: AppColors.primaryBlue,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
                       child: AppText(
-                        '${item.unreadCount}',
+                        item.unreadCount > 99 ? '99+' : '${item.unreadCount}',
                         size: 11.fSize,
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -255,39 +270,43 @@ class _ChatHomeViewState extends State<ChatHomeView> {
       height: 50.adaptSize,
       decoration: const BoxDecoration(shape: BoxShape.circle),
       child: ClipOval(
-        child: photoUrl != null && photoUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: photoUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  color: AppColors.scaffoldBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 28.fSize,
-                  ),
+        child:
+            photoUrl != null && photoUrl.isNotEmpty
+                ? CachedNetworkImage(
+                  imageUrl: photoUrl,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (_, __) => Container(
+                        color: AppColors.scaffoldBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 28.fSize,
+                        ),
+                      ),
+                  errorWidget:
+                      (_, __, ___) => Container(
+                        color: AppColors.scaffoldBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 28.fSize,
+                        ),
+                      ),
+                )
+                : Image.asset(
+                  AppImages.userAvatar,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (_, __, ___) => Container(
+                        color: AppColors.scaffoldBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 28.fSize,
+                        ),
+                      ),
                 ),
-                errorWidget: (_, __, ___) => Container(
-                  color: AppColors.scaffoldBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 28.fSize,
-                  ),
-                ),
-              )
-            : Image.asset(
-                AppImages.userAvatar,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: AppColors.scaffoldBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 28.fSize,
-                  ),
-                ),
-              ),
       ),
     );
   }
@@ -295,17 +314,26 @@ class _ChatHomeViewState extends State<ChatHomeView> {
   String _formatTime(DateTime dateTime) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final msgDate = DateTime(
-      dateTime.year,
-      dateTime.month,
-      dateTime.day,
-    );
+    final msgDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
     final diff = today.difference(msgDate).inDays;
     final timeStr =
         '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     if (diff == 0) return timeStr;
     if (diff == 1) return 'Yesterday';
-    if (diff < 7) return '${dateTime.weekday == 1 ? 'Mon' : dateTime.weekday == 2 ? 'Tue' : dateTime.weekday == 3 ? 'Wed' : dateTime.weekday == 4 ? 'Thu' : dateTime.weekday == 5 ? 'Fri' : dateTime.weekday == 6 ? 'Sat' : 'Sun'}';
+    if (diff < 7)
+      return '${dateTime.weekday == 1
+          ? 'Mon'
+          : dateTime.weekday == 2
+          ? 'Tue'
+          : dateTime.weekday == 3
+          ? 'Wed'
+          : dateTime.weekday == 4
+          ? 'Thu'
+          : dateTime.weekday == 5
+          ? 'Fri'
+          : dateTime.weekday == 6
+          ? 'Sat'
+          : 'Sun'}';
     return '${dateTime.day}/${dateTime.month}';
   }
 }

@@ -1,6 +1,9 @@
 class RouteNames {
   // Splash
   static const String splash = '/';
+
+  // Onboarding
+  static const String onboarding = '/onboarding';
   
   // Auth
   static const String authSelection = '/auth-selection';
@@ -16,10 +19,14 @@ class RouteNames {
 
   // Dashboard
   static const String homeDashboard = '/home-dashboard';
+  static const String plateCapture = '/plate-capture';
   static const String baseNavigation = '/base-navigation';
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String privacyPermissions = '/privacy-permissions';
+  static const String termsCondition = '/terms-condition';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String helpCenter = '/help-center';
 
   // Chat
   static const String chatDetail = '/chat-detail';
