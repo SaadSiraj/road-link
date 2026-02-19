@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
 
@@ -19,7 +21,7 @@ class _AdminDrawerState extends State<AdminDrawer> {
   bool _isLoggingOut = false;
 
   Future<void> _showLogoutDialog() async {
-    if (!mounted) return;
+    developer.log('🔴 Showing logout dialog', name: 'AdminDrawer');
     
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -42,7 +44,10 @@ class _AdminDrawerState extends State<AdminDrawer> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
+            onPressed: () {
+              developer.log('🔴 User cancelled logout', name: 'AdminDrawer');
+              Navigator.of(dialogContext).pop(false);
+            },
             child: AppText(
               'Cancel',
               size: 15.fSize,
@@ -51,7 +56,11 @@ class _AdminDrawerState extends State<AdminDrawer> {
             ),
           ),
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
+            onPressed: () async {
+              developer.log('🔴 User confirmed logout', name: 'AdminDrawer');
+              // Close dialog first
+              Navigator.of(dialogContext).pop(true);
+            },
             child: AppText(
               'Logout',
               size: 15.fSize,
@@ -63,41 +72,78 @@ class _AdminDrawerState extends State<AdminDrawer> {
       ),
     );
 
-    if (shouldLogout == true) {
-      await _handleLogout();
+    developer.log('🔴 Dialog closed, shouldLogout: $shouldLogout', name: 'AdminDrawer');
+
+    if (shouldLogout == true && mounted) {
+      developer.log('🔴 Logout confirmed and widget mounted, proceeding with logout', name: 'AdminDrawer');
+      await _performLogout();
+    } else if (shouldLogout == true && !mounted) {
+      developer.log('🔴 Logout confirmed but widget NOT mounted', name: 'AdminDrawer');
+    } else {
+      developer.log('🔴 Logout cancelled', name: 'AdminDrawer');
     }
   }
 
-  Future<void> _handleLogout() async {
+  Future<void> _performLogout() async {
+    developer.log('🔴 _performLogout() started', name: 'AdminDrawer');
+    
+    if (!mounted) {
+      developer.log('🔴 ERROR: Widget not mounted in _performLogout()', name: 'AdminDrawer');
+      return;
+    }
+    
     setState(() {
       _isLoggingOut = true;
     });
 
     try {
+      // Perform logout
+      developer.log('🔴 Calling AuthService.logout()', name: 'AdminDrawer');
       await _authService.logout();
-      if (!mounted) return;
+      developer.log('🔴 AuthService.logout() completed', name: 'AdminDrawer');
       
-      // Navigate to auth selection screen and clear navigation stack
-      // Use Navigator directly to ensure proper navigation
-      Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil(
+      // Use a BuildContext that's guaranteed to be valid
+      // Get the navigator before any async operations
+      developer.log('🔴 Getting root navigator', name: 'AdminDrawer');
+      final navigator = Navigator.of(context, rootNavigator: true);
+      
+      developer.log('🔴 Attempting to navigate to auth selection', name: 'AdminDrawer');
+      
+      // Navigate to auth selection screen and clear all routes
+      navigator.pushNamedAndRemoveUntil(
         RouteNames.authSelection,
-        (Route<dynamic> route) => false,
+        (Route<dynamic> route) {
+          developer.log('🔴 Removing route: ${route.settings.name}', name: 'AdminDrawer');
+          return false; // Remove all routes
+        },
       );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoggingOut = false;
-      });
-      // Show error message if needed
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: AppText(
-            'Failed to logout. Please try again.',
-            color: AppColors.white,
+      
+      developer.log('🔴 Navigation completed successfully', name: 'AdminDrawer');
+    } catch (e, stackTrace) {
+      developer.log(
+        '🔴 Logout error: $e',
+        name: 'AdminDrawer',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _isLoggingOut = false;
+        });
+        
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: AppText(
+              'Failed to logout: ${e.toString()}',
+              color: AppColors.white,
+            ),
+            backgroundColor: AppColors.error,
+            duration: const Duration(seconds: 3),
           ),
-          backgroundColor: AppColors.error,
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -196,22 +242,36 @@ class _AdminDrawerState extends State<AdminDrawer> {
           const Divider(),
 
           /// 🔹 Logout
-          _drawerItem(
-            icon: Icons.logout,
-            title: 'Logout',
-            color: Colors.red,
-            onTap: _isLoggingOut
-                ? () {}
-                : () async {
-                    // Close drawer first
-                    Navigator.pop(context);
-                    // Wait a bit for drawer to close, then show dialog
-                    await Future.delayed(const Duration(milliseconds: 200));
-                    if (mounted) {
-                      _showLogoutDialog();
-                    }
+          _isLoggingOut
+              ? ListTile(
+                  leading: const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.error),
+                    ),
+                  ),
+                  title: const Text(
+                    'Logging out...',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                )
+              : _drawerItem(
+                  icon: Icons.logout,
+                  title: 'Logout',
+                  color: Colors.red,
+                  onTap: () async {
+                    developer.log('🔴 Logout button tapped in drawer', name: 'AdminDrawer');
+                    // DON'T close drawer - keep it open so widget stays mounted
+                    developer.log('🔴 Showing logout dialog (drawer stays open)', name: 'AdminDrawer');
+                    _showLogoutDialog();
                   },
-          ),
+                ),
 
           const SizedBox(height: 12),
         ],

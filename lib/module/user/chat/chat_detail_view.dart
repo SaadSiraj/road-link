@@ -7,6 +7,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../models/message_model.dart';
+import '../../../services/fcm_service.dart';
 import '../../../viewmodels/chat_detail_viewmodel.dart';
 import 'chat_detail_args.dart';
 
@@ -29,6 +30,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   void initState() {
     super.initState();
     if (widget.args != null) {
+      FCMService.setCurrentConversationId(widget.args!.conversationId);
       _viewModel = ChatDetailViewModel(
         conversationId: widget.args!.conversationId,
         otherUserId: widget.args!.otherUserId,
@@ -40,8 +42,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   void _onViewModelChanged() {
-    if (_viewModel != null &&
-        _viewModel!.messages.length > _lastMessageCount) {
+    if (_viewModel != null && _viewModel!.messages.length > _lastMessageCount) {
       _lastMessageCount = _viewModel!.messages.length;
       _scrollToBottom();
     }
@@ -49,6 +50,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
   @override
   void dispose() {
+    FCMService.setCurrentConversationId(null);
     _viewModel?.removeListener(_onViewModelChanged);
     _viewModel?.dispose();
     _messageController.dispose();
@@ -74,10 +76,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       return Scaffold(
         backgroundColor: AppColors.scaffoldBackground,
         body: Center(
-          child: AppText(
-            'Invalid chat',
-            color: AppColors.textSecondary,
-          ),
+          child: AppText('Invalid chat', color: AppColors.textSecondary),
         ),
       );
     }
@@ -93,13 +92,14 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                 children: [
                   _buildHeader(context, vm),
                   Expanded(
-                    child: vm.isLoading && vm.messages.isEmpty
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primaryBlue,
-                            ),
-                          )
-                        : _buildMessagesList(context, vm),
+                    child:
+                        vm.isLoading && vm.messages.isEmpty
+                            ? const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryBlue,
+                              ),
+                            )
+                            : _buildMessagesList(context, vm),
                   ),
                   _buildInputBar(context, vm),
                 ],
@@ -116,9 +116,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
       decoration: BoxDecoration(
         color: AppColors.scaffoldBackground,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
-        ),
+        border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Row(
         children: [
@@ -149,16 +147,22 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                     Container(
                       width: 8.adaptSize,
                       height: 8.adaptSize,
-                      decoration: const BoxDecoration(
-                        color: AppColors.success,
+                      decoration: BoxDecoration(
+                        color:
+                            vm.isOnline
+                                ? AppColors.success
+                                : AppColors.textSecondary,
                         shape: BoxShape.circle,
                       ),
                     ),
                     Gap.h(6),
                     AppText(
-                      'Online',
+                      vm.getLastSeenText(),
                       size: 12.fSize,
-                      color: AppColors.success,
+                      color:
+                          vm.isOnline
+                              ? AppColors.success
+                              : AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
                     ),
                   ],
@@ -166,14 +170,14 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.phone,
-              size: 24.fSize,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          // IconButton(
+          //   onPressed: () {},
+          //   icon: Icon(
+          //     Icons.phone,
+          //     size: 24.fSize,
+          //     color: AppColors.textPrimary,
+          //   ),
+          // ),
           IconButton(
             onPressed: () {},
             icon: Icon(
@@ -193,39 +197,43 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       height: 40.adaptSize,
       decoration: const BoxDecoration(shape: BoxShape.circle),
       child: ClipOval(
-        child: photoUrl != null && photoUrl.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: photoUrl,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Container(
-                  color: AppColors.cardBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 24.fSize,
-                  ),
+        child:
+            photoUrl != null && photoUrl.isNotEmpty
+                ? CachedNetworkImage(
+                  imageUrl: photoUrl,
+                  fit: BoxFit.cover,
+                  placeholder:
+                      (_, __) => Container(
+                        color: AppColors.cardBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 24.fSize,
+                        ),
+                      ),
+                  errorWidget:
+                      (_, __, ___) => Container(
+                        color: AppColors.cardBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 24.fSize,
+                        ),
+                      ),
+                )
+                : Image.asset(
+                  AppImages.userAvatar,
+                  fit: BoxFit.cover,
+                  errorBuilder:
+                      (_, __, ___) => Container(
+                        color: AppColors.cardBackground,
+                        child: Icon(
+                          Icons.person,
+                          color: AppColors.textSecondary,
+                          size: 24.fSize,
+                        ),
+                      ),
                 ),
-                errorWidget: (_, __, ___) => Container(
-                  color: AppColors.cardBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 24.fSize,
-                  ),
-                ),
-              )
-            : Image.asset(
-                AppImages.userAvatar,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: AppColors.cardBackground,
-                  child: Icon(
-                    Icons.person,
-                    color: AppColors.textSecondary,
-                    size: 24.fSize,
-                  ),
-                ),
-              ),
       ),
     );
   }
@@ -270,6 +278,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     MessageModel msg,
     bool isMe,
   ) {
+    final isRead = vm.isMessageRead(msg);
+
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -277,44 +287,65 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           maxWidth: MediaQuery.sizeOf(context).width * 0.75,
         ),
         margin: EdgeInsets.only(bottom: 8.v),
-        padding: EdgeInsets.symmetric(
-          horizontal: 16.h,
-          vertical: 12.v,
+        padding: EdgeInsets.only(
+          left: 16.h,
+          right:
+              isMe
+                  ? 12.h
+                  : 16.h, // Less padding on right for timestamp/tick if me
+          top: 12.v,
+          bottom: 12.v,
         ),
         decoration: BoxDecoration(
           color: isMe ? AppColors.primaryBlue : AppColors.cardBackground,
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16.adaptSize),
-            topRight: Radius.circular(16.adaptSize),
-            bottomRight: Radius.circular(isMe ? 4.adaptSize : 16.adaptSize),
-            bottomLeft: Radius.circular(isMe ? 16.adaptSize : 4.adaptSize),
+            topLeft: Radius.circular(18.adaptSize),
+            topRight: Radius.circular(18.adaptSize),
+            bottomRight: Radius.circular(isMe ? 4.adaptSize : 18.adaptSize),
+            bottomLeft: Radius.circular(isMe ? 18.adaptSize : 4.adaptSize),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            AppText(
+            Text(
               msg.text,
-              size: 14.fSize,
-              color: isMe ? Colors.white : AppColors.textPrimary,
+              style: TextStyle(
+                fontSize: 15.fSize,
+                color: isMe ? Colors.white : AppColors.textPrimary,
+                height: 1.4,
+              ),
             ),
-            Gap.v(6),
+            Gap.v(4),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppText(
                   ChatDetailViewModel.formatMessageTime(msg.createdAt),
-                  size: 11.fSize,
-                  color: isMe
-                      ? Colors.white.withValues(alpha: 0.8)
-                      : AppColors.textSecondary,
+                  size: 10.fSize,
+                  color:
+                      isMe
+                          ? Colors.white.withOpacity(0.7)
+                          : AppColors.textSecondary.withOpacity(0.7),
                 ),
                 if (isMe) ...[
                   Gap.h(4),
                   Icon(
-                    Icons.check,
-                    size: 14.fSize,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    isRead ? Icons.done_all : Icons.check,
+                    size: 16.fSize,
+                    color:
+                        isRead
+                            ? Colors
+                                .white // Use white or a distinct color for read in blue bubble
+                            : Colors.white.withOpacity(0.7),
                   ),
                 ],
               ],
@@ -330,9 +361,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
       decoration: BoxDecoration(
         color: AppColors.scaffoldBackground,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Row(
         children: [
@@ -364,9 +393,10 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                 controller: _messageController,
                 enabled: vm.canSendMessages,
                 decoration: InputDecoration(
-                  hintText: vm.canSendMessages
-                      ? 'Type a message...'
-                      : 'Accept the request to chat',
+                  hintText:
+                      vm.canSendMessages
+                          ? 'Type a message...'
+                          : 'Accept the request to chat',
                   hintStyle: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14.fSize,
@@ -378,7 +408,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                   color: AppColors.textPrimary,
                   fontSize: 14.fSize,
                 ),
-                onSubmitted: vm.canSendMessages ? (_) => _sendMessage(vm) : null,
+                onSubmitted:
+                    vm.canSendMessages ? (_) => _sendMessage(vm) : null,
               ),
             ),
           ),
@@ -387,29 +418,28 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             width: 40.adaptSize,
             height: 40.adaptSize,
             decoration: BoxDecoration(
-              color: vm.canSendMessages
-                  ? AppColors.primaryBlue
-                  : AppColors.textSecondary.withValues(alpha: 0.3),
+              color:
+                  vm.canSendMessages
+                      ? AppColors.primaryBlue
+                      : AppColors.textSecondary.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: vm.canSendMessages && !vm.isSending
-                  ? () => _sendMessage(vm)
-                  : null,
-              icon: vm.isSending
-                  ? SizedBox(
-                      width: 20.adaptSize,
-                      height: 20.adaptSize,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Icon(
-                      Icons.send,
-                      size: 20.fSize,
-                      color: Colors.white,
-                    ),
+              onPressed:
+                  vm.canSendMessages && !vm.isSending
+                      ? () => _sendMessage(vm)
+                      : null,
+              icon:
+                  vm.isSending
+                      ? SizedBox(
+                        width: 20.adaptSize,
+                        height: 20.adaptSize,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                      : Icon(Icons.send, size: 20.fSize, color: Colors.white),
             ),
           ),
         ],

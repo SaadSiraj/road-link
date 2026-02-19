@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routes/app_router.dart';
 import '../../../core/routes/routes_name.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../core/shared/widgets/step_progress_indicator.dart';
@@ -55,36 +56,21 @@ class _RegistrationViewState extends State<RegistrationView> {
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: Padding(
-        padding: EdgeInsets.only(bottom: 18.h),
+        padding: EdgeInsets.only(bottom: 18.v),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextButton(
-              onPressed: () {},
-              child: AppText(
-                'Terms of Service',
-                size: 14.fSize,
-                color: AppColors.textSecondary,
-              ),
+            _buildFooterLink(
+              context,
+              'Terms of Service',
+              RouteNames.termsCondition,
             ),
-
-            TextButton(
-              onPressed: () {},
-              child: AppText(
-                'Privacy Policy',
-                size: 14.fSize,
-                color: AppColors.textSecondary,
-              ),
+            _buildFooterLink(
+              context,
+              'Privacy Policy',
+              RouteNames.privacyPolicy,
             ),
-
-            TextButton(
-              onPressed: () {},
-              child: AppText(
-                'Help Center',
-                size: 14.fSize,
-                color: AppColors.textSecondary,
-              ),
-            ),
+            _buildFooterLink(context, 'Help Center', RouteNames.helpCenter),
           ],
         ),
       ),
@@ -97,7 +83,7 @@ class _RegistrationViewState extends State<RegistrationView> {
               padding: EdgeInsets.symmetric(horizontal: 24.h, vertical: 24.v),
               child: StepProgressIndicator(
                 currentStep: _currentPage,
-                stepLabels: ['Account', 'Verify', 'Profile', 'Car Plate'],
+                stepLabels: const ['Account', 'Verify', 'Profile', 'Car Plate'],
               ),
             ),
 
@@ -116,7 +102,7 @@ class _RegistrationViewState extends State<RegistrationView> {
                   return SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
                       horizontal: 24.h,
-                      vertical: 24.v,
+                      vertical: 12.v,
                     ),
                     child: _buildPageContent(index),
                   );
@@ -125,6 +111,20 @@ class _RegistrationViewState extends State<RegistrationView> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFooterLink(BuildContext context, String text, String route) {
+    return TextButton(
+      onPressed: () => AppRouter.push(context, route),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.symmetric(horizontal: 12.h),
+      ),
+      child: AppText(
+        text,
+        size: 13.fSize,
+        color: AppColors.textSecondary.withOpacity(0.8),
       ),
     );
   }

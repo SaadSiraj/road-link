@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "214357187230",
-    "project_id": "roadlink-f91ef",
-    "storage_bucket": "roadlink-f91ef.firebasestorage.app"
+    "project_number": "518827944109",
+    "project_id": "platechat2",
+    "storage_bucket": "platechat2.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:214357187230:android:da51253f6886b09cc0398f",
+        "mobilesdk_app_id": "1:518827944109:android:8d1e5fec9e8033bbd67e24",
         "android_client_info": {
           "package_name": "com.mario.roadlink"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBS4fp1D9PkBL-im-qzAKUQY78zwKyNmKU"
+          "current_key": "AIzaSyAi5nH1LLkH6q4HeaGqwVUXMsBTfGdTHXg"
         }
       ],
       "services": {

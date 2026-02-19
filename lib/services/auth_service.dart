@@ -134,9 +134,28 @@ class AuthService {
   }
 
   Future<void> logout() async {
-    await _auth.signOut();
-    // Clear SharedPreferences login state
-    await SharedPreferencesService.clearLoginState();
+    developer.log('🔴 Starting logout process', name: 'AuthService');
+    
+    try {
+      developer.log('🔴 Signing out from Firebase Auth', name: 'AuthService');
+      await _auth.signOut();
+      developer.log('🔴 Firebase Auth sign out completed', name: 'AuthService');
+      
+      // Clear SharedPreferences login state
+      developer.log('🔴 Clearing SharedPreferences', name: 'AuthService');
+      await SharedPreferencesService.clearLoginState();
+      developer.log('🔴 SharedPreferences cleared', name: 'AuthService');
+      
+      developer.log('🔴 Logout completed successfully', name: 'AuthService');
+    } catch (e, stackTrace) {
+      developer.log(
+        '🔴 Logout error in AuthService: $e',
+        name: 'AuthService',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      rethrow;
+    }
   }
 
   Future<void> deleteAccount(String uid) async {

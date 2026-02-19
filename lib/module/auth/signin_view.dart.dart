@@ -1,16 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl_phone_field/country_picker_dialog.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/routes/routes_name.dart';
 import '../../core/shared/app_button.dart';
 import '../../core/shared/app_text.dart';
-import '../../core/shared/app_textfield.dart';
 import '../../core/utils/size_utils.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
-class SignInView extends StatelessWidget {
+class SignInView extends StatefulWidget {
   const SignInView({super.key});
+
+  @override
+  State<SignInView> createState() => _SignInViewState();
+}
+
+class _SignInViewState extends State<SignInView> {
+  final TextEditingController _phoneController = TextEditingController();
+  String _completePhoneNumber = '';
+  bool _isPhoneValid = false;
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,15 +80,171 @@ class SignInView extends StatelessWidget {
                         // Phone Number Field
                         Consumer<AuthViewModel>(
                           builder: (context, auth, child) {
-                            return ReusableTextField(
-                              controller: auth.phoneController,
-                              label: 'Phone Number',
-                              hintText: 'Enter your Phone Number',
-                              keyboardType: TextInputType.phone,
-                              suffixIcon: Icons.call,
-                              borderRadius: 16.adaptSize,
-                              fillColor: AppColors.textFieldFillColor,
-                              textColor: AppColors.textPrimary,
+                            return IntlPhoneField(
+                              controller: _phoneController,
+                              decoration: InputDecoration(
+                                labelText: 'Phone Number',
+                                hintText: 'Enter your phone number',
+                                filled: true,
+                                fillColor: AppColors.textFieldFillColor,
+                                counterText:
+                                    '', // Hide default counter for cleaner look
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 20.h,
+                                  vertical: 18.v,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    16.adaptSize,
+                                  ),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    16.adaptSize,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: AppColors.border,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    16.adaptSize,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: AppColors.primaryBlue,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    16.adaptSize,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: AppColors.error.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    16.adaptSize,
+                                  ),
+                                  borderSide: BorderSide(
+                                    color: AppColors.error,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14.fSize,
+                                ),
+                                hintStyle: TextStyle(
+                                  color: AppColors.textSecondary.withOpacity(
+                                    0.4,
+                                  ),
+                                  fontSize: 14.fSize,
+                                ),
+                                suffixIcon: Padding(
+                                  padding: EdgeInsets.only(right: 12.h),
+                                  child: Icon(
+                                    Icons.phone_android_rounded,
+                                    color: AppColors.textSecondary.withOpacity(
+                                      0.6,
+                                    ),
+                                    size: 20.adaptSize,
+                                  ),
+                                ),
+                              ),
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16.fSize,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              cursorColor: AppColors.primaryBlue,
+                              dropdownDecoration: BoxDecoration(
+                                color: AppColors.textFieldFillColor,
+                                borderRadius: BorderRadius.circular(
+                                  12.adaptSize,
+                                ),
+                              ),
+                              dropdownTextStyle: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16.fSize,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              dropdownIcon: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: AppColors.textSecondary,
+                                size: 20.adaptSize,
+                              ),
+                              flagsButtonPadding: EdgeInsets.only(left: 12.h),
+                              pickerDialogStyle: PickerDialogStyle(
+                                backgroundColor: AppColors.cardBackground,
+                                countryCodeStyle: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16.fSize,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                countryNameStyle: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14.fSize,
+                                ),
+                                searchFieldCursorColor: AppColors.primaryBlue,
+                                searchFieldInputDecoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: AppColors.textFieldFillColor,
+                                  hintText: 'Search country',
+                                  prefixIcon: Icon(
+                                    Icons.search,
+                                    color: AppColors.textSecondary,
+                                    size: 20.adaptSize,
+                                  ),
+                                  hintStyle: TextStyle(
+                                    color: AppColors.textSecondary.withOpacity(
+                                      0.5,
+                                    ),
+                                    fontSize: 14.fSize,
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16.h,
+                                    vertical: 12.v,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12.adaptSize,
+                                    ),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12.adaptSize,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.border,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      12.adaptSize,
+                                    ),
+                                    borderSide: BorderSide(
+                                      color: AppColors.primaryBlue,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              invalidNumberMessage:
+                                  'Please enter a valid phone number',
+                              initialCountryCode: 'AU',
+                              onChanged: (phone) {
+                                setState(() {
+                                  _completePhoneNumber = phone.completeNumber;
+                                  _isPhoneValid = phone.isValidNumber();
+                                });
+                              },
                             );
                           },
                         ),
@@ -102,12 +274,14 @@ class SignInView extends StatelessWidget {
                         Consumer<AuthViewModel>(
                           builder: (context, auth, child) {
                             return CustomButton(
-                              text: auth.isLoading ? 'Sending OTP...' : 'Sign In',
-                              onPressed: auth.isLoading
-                                  ? () {}
-                                  : () {
-                                      _handleSignIn(context, auth);
-                                    },
+                              text:
+                                  auth.isLoading ? 'Sending OTP...' : 'Sign In',
+                              onPressed:
+                                  auth.isLoading
+                                      ? () {}
+                                      : () {
+                                        _handleSignIn(auth);
+                                      },
                               backgroundColor: AppColors.primaryBlue,
                               textColor: AppColors.white,
                               borderRadius: 8.adaptSize,
@@ -204,60 +378,38 @@ class SignInView extends StatelessWidget {
     );
   }
 
-  void _handleSignIn(BuildContext context, AuthViewModel auth) {
-    final rawPhone = auth.phoneController.text.trim();
-    if (rawPhone.isEmpty) {
+  void _handleSignIn(AuthViewModel auth) {
+    // Check if phone number is valid and not empty
+    if (_completePhoneNumber.isEmpty || !_isPhoneValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your phone number.'),
+        SnackBar(
+          content: AppText(
+            _completePhoneNumber.isEmpty
+                ? 'Please enter your phone number.'
+                : 'Please enter a valid phone number.',
+            color: AppColors.white,
+          ),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
     }
 
-    final formattedPhone = _formatPhoneNumber(rawPhone);
-    if (formattedPhone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid phone number.'),
-        ),
-      );
-      return;
-    }
-
-    auth.setPhoneNumber(formattedPhone);
+    auth.setPhoneNumber(_completePhoneNumber);
     auth.signInAndSendOtp(
-      formattedPhone,
+      _completePhoneNumber,
       () {
         // Navigate to verify code screen
-        Navigator.pushNamed(
-          context,
-          RouteNames.verifyCode,
-        );
+        Navigator.pushNamed(context, RouteNames.verifyCode);
       },
       onError: (error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(error),
+            content: AppText(error, color: AppColors.white),
+            backgroundColor: AppColors.error,
           ),
         );
       },
     );
-  }
-
-  String _formatPhoneNumber(String phone) {
-    final trimmed = phone.replaceAll(RegExp(r'\s+'), '');
-    if (trimmed.startsWith('+')) {
-      return trimmed;
-    }
-
-    final digitsOnly = trimmed.replaceAll(RegExp(r'\D'), '');
-    if (digitsOnly.isEmpty) return '';
-
-    if (digitsOnly.startsWith('0')) {
-      return '+61${digitsOnly.substring(1)}';
-    }
-
-    return '+$digitsOnly';
   }
 }

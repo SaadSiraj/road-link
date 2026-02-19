@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/fcm_service.dart';
 import '../services/shared_preferences_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
@@ -133,6 +134,7 @@ class AuthViewModel extends ChangeNotifier {
 
       isLoading = false;
       notifyListeners();
+      await FCMService.refreshTokenAndSave();
       onSuccess();
     } catch (e) {
       _service.logRegistrationEvent(
@@ -181,8 +183,14 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // For now we only store the user's name. Profile photo upload will be added later.
-      const String photoUrl = '';
+      String photoUrl = '';
+      if (profileImage != null) {
+        final url = await _service.uploadProfilePhoto(
+          file: profileImage,
+          uid: currentUser.uid,
+        );
+        photoUrl = url ?? '';
+      }
 
       await _service.saveUserProfile(
         uid: currentUser.uid,
@@ -211,6 +219,7 @@ class AuthViewModel extends ChangeNotifier {
         event: 'profile_completed',
       );
 
+      await FCMService.refreshTokenAndSave();
       onSuccess?.call();
     } catch (e) {
       errorMessage = e.toString();

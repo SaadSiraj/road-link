@@ -63,5 +63,70 @@ class UsersListViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     await loadUsers();
   }
-}
 
+  /// Delete a user
+  Future<bool> deleteUser(String userId) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _adminService.deleteUser(userId);
+
+      // Remove user from local list
+      users.removeWhere((user) => user.userId == userId);
+
+      isLoading = false;
+      errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      isLoading = false;
+      errorMessage = 'Failed to delete user. Please try again.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Update a user
+  Future<bool> updateUser({
+    required String userId,
+    required String name,
+    required String phone,
+  }) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _adminService.updateUser(
+        userId: userId,
+        data: {'name': name, 'phone': phone},
+      );
+
+      // Update user in local list
+      final index = users.indexWhere((user) => user.userId == userId);
+      if (index != -1) {
+        final oldUser = users[index];
+        users[index] = UserListItem(
+          userId: oldUser.userId,
+          name: name,
+          phone: phone,
+          photoUrl: oldUser.photoUrl,
+          carsCount: oldUser.carsCount,
+          createdAt: oldUser.createdAt,
+        );
+      }
+
+      isLoading = false;
+      errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      isLoading = false;
+      errorMessage = 'Failed to update user. Please try again.';
+      notifyListeners();
+      return false;
+    }
+  }
+}

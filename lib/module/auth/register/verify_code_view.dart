@@ -43,8 +43,10 @@ class VerifyCodeContent extends StatefulWidget {
 }
 
 class _VerifyCodeContentState extends State<VerifyCodeContent> {
-  final List<TextEditingController> _controllers =
-      List.generate(6, (_) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (_) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (_) => FocusNode());
   static const int _initialTimerSeconds = 59;
   Timer? _timer;
@@ -72,9 +74,9 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
       _controllers.map((controller) => controller.text).join();
 
   void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String get _formattedTimer {
@@ -115,14 +117,10 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
       return;
     }
 
-    auth.sendOtp(
-      phone,
-      () {
-        _startTimer();
-        _showSnack('Verification code resent.');
-      },
-      onError: _showSnack,
-    );
+    auth.sendOtp(phone, () {
+      _startTimer();
+      _showSnack('Verification code resent.');
+    }, onError: _showSnack);
   }
 
   void _submitCode(AuthViewModel auth) {
@@ -133,71 +131,55 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
       return;
     }
 
-    auth.verifyOtp(
-      _currentCode,
-      () async {
-        if (widget.onNext != null) {
-          widget.onNext!.call();
-          return;
-        }
+    auth.verifyOtp(_currentCode, () async {
+      if (widget.onNext != null) {
+        widget.onNext!.call();
+        return;
+      }
 
-        // Check if user profile exists in Firestore
-        final currentUser = FirebaseAuth.instance.currentUser;
-        if (currentUser != null) {
-          try {
-            final userDoc = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(currentUser.uid)
-                .get();
+      // Check if user profile exists in Firestore
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        try {
+          final userDoc =
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(currentUser.uid)
+                  .get();
 
-            final userData = userDoc.data();
-            final hasName = userData?['name'] != null &&
-                (userData!['name'] as String).trim().isNotEmpty;
-            final isAdmin = userData?['isAdmin'] == true;
+          final userData = userDoc.data();
+          final hasName =
+              userData?['name'] != null &&
+              (userData!['name'] as String).trim().isNotEmpty;
+          final isAdmin = userData?['isAdmin'] == true;
 
-            if (hasName) {
-              // Save login state to SharedPreferences
-              await SharedPreferencesService.saveLoginState(
-                isLoggedIn: true,
-                isAdmin: isAdmin,
-                userId: currentUser.uid,
-              );
-
-              // User profile exists, route based on admin flag
-              if (isAdmin) {
-                AppRouter.pushAndRemoveUntil(
-                  context,
-                  RouteNames.adminDashboard,
-                );
-              } else {
-                AppRouter.pushAndRemoveUntil(
-                  context,
-                  RouteNames.baseNavigation,
-                );
-              }
-            } else {
-              // User profile doesn't exist, navigate to complete profile (registration flow)
-              AppRouter.pushReplacement(
-                context,
-                RouteNames.completeProfile,
-              );
-            }
-          } catch (e) {
-            // On error, default to complete profile
-            AppRouter.pushReplacement(
-              context,
-              RouteNames.completeProfile,
+          if (hasName) {
+            // Save login state to SharedPreferences
+            await SharedPreferencesService.saveLoginState(
+              isLoggedIn: true,
+              isAdmin: isAdmin,
+              userId: currentUser.uid,
             );
+
+            // User profile exists, route based on admin flag
+            if (isAdmin) {
+              AppRouter.pushAndRemoveUntil(context, RouteNames.adminDashboard);
+            } else {
+              AppRouter.pushAndRemoveUntil(context, RouteNames.baseNavigation);
+            }
+          } else {
+            // User profile doesn't exist, navigate to complete profile (registration flow)
+            AppRouter.pushReplacement(context, RouteNames.completeProfile);
           }
-        } else {
-          // No user, navigate to complete profile
-          AppRouter.pushReplacement(
-            context,
-            RouteNames.completeProfile,
-          );
+        } catch (e) {
+          // On error, default to complete profile
+          AppRouter.pushReplacement(context, RouteNames.completeProfile);
         }
-      },
-    );
+      } else {
+        // No user, navigate to complete profile
+        AppRouter.pushReplacement(context, RouteNames.completeProfile);
+      }
+    });
   }
 
   @override
@@ -211,70 +193,80 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
           width: double.infinity,
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
-            borderRadius: BorderRadius.circular(20.adaptSize),
+            borderRadius: BorderRadius.circular(24.adaptSize),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-          padding: EdgeInsets.all(20.adaptSize),
+          padding: EdgeInsets.all(24.adaptSize),
           child: Column(
             children: [
               /// Icon
               Container(
-                height: 60.adaptSize,
-                width: 60.adaptSize,
+                height: 72.adaptSize,
+                width: 72.adaptSize,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue,
+                  color: AppColors.primaryBlue.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.verified_user_sharp,
-                  color: Colors.white,
-                  size: 28,
+                child: Icon(
+                  Icons.verified_user_rounded,
+                  color: AppColors.primaryBlue,
+                  size: 32.adaptSize,
                 ),
               ),
 
-              Gap.v(20),
+              Gap.v(24),
 
               /// Title
               AppText(
                 'Verify Code',
-                size: 26.fSize,
+                size: 28.fSize,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
 
-              Gap.v(8),
+              Gap.v(12),
 
               /// Subtitle
               AppText(
                 'Enter the 6-digit code sent to your phone',
-                size: 14.fSize,
+                size: 15.fSize,
                 align: TextAlign.center,
                 color: AppColors.textSecondary,
               ),
 
-              Gap.v(16),
+              Gap.v(20),
 
               /// Timer
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 6.v),
+                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.v),
                 decoration: BoxDecoration(
-                  color: AppColors.scaffoldBackground,
-                  borderRadius: BorderRadius.circular(8.adaptSize),
-                  border: Border.all(color: AppColors.border, width: 1),
+                  color: AppColors.scaffoldBackground.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12.adaptSize),
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.5),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      Icons.access_time,
-                      size: 16.fSize,
+                      Icons.timer_outlined,
+                      size: 18.fSize,
                       color: AppColors.textSecondary,
                     ),
-                    Gap.h(6),
+                    Gap.h(8),
                     AppText(
-                      'Code expires in $_formattedTimer',
+                      _formattedTimer,
                       size: 14.fSize,
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
                   ],
                 ),
@@ -288,7 +280,7 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                 children: List.generate(
                   6,
                   (index) => SizedBox(
-                    width: 48.adaptSize,
+                    width: 46.adaptSize,
                     child: TextField(
                       controller: _controllers[index],
                       focusNode: _focusNodes[index],
@@ -296,7 +288,7 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                       maxLength: 1,
                       keyboardType: TextInputType.number,
                       style: TextStyle(
-                        fontSize: 24.fSize,
+                        fontSize: 22.fSize,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
@@ -304,23 +296,24 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                         counterText: '',
                         filled: true,
                         fillColor: AppColors.textFieldFillColor,
+                        contentPadding: EdgeInsets.symmetric(vertical: 14.v),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.adaptSize),
+                          borderSide: BorderSide.none,
+                        ),
                         enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.adaptSize),
+                          borderRadius: BorderRadius.circular(12.adaptSize),
                           borderSide: BorderSide(
                             color: AppColors.border,
-                            width: 1.5,
+                            width: 1,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.adaptSize),
+                          borderRadius: BorderRadius.circular(12.adaptSize),
                           borderSide: BorderSide(
                             color: AppColors.primaryBlue,
                             width: 1.5,
                           ),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 12.v,
-                          horizontal: 8.h,
                         ),
                       ),
                       onChanged: (value) {
@@ -328,6 +321,9 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                           _focusNodes[index + 1].requestFocus();
                         } else if (value.isEmpty && index > 0) {
                           _focusNodes[index - 1].requestFocus();
+                        }
+                        if (_currentCode.length == 6) {
+                          _submitCode(auth);
                         }
                       },
                     ),
@@ -340,7 +336,7 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                 AppText(
                   auth.errorMessage!,
                   size: 12.fSize,
-                  color: Colors.redAccent,
+                  color: AppColors.error,
                 ),
               ],
 
@@ -352,58 +348,44 @@ class _VerifyCodeContentState extends State<VerifyCodeContent> {
                 onPressed: () => _submitCode(auth),
                 backgroundColor: AppColors.primaryBlue,
                 textColor: AppColors.white,
-                borderRadius: 10.adaptSize,
-                height: 50.v,
+                borderRadius: 12.adaptSize,
+                height: 52.v,
                 width: double.infinity,
                 fontSize: 16.fSize,
                 fontWeight: FontWeight.bold,
                 isDisabled: auth.isLoading,
               ),
 
-              Gap.v(20),
-
-              /// Divider
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(color: AppColors.border, thickness: 1),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.h),
-                    child: AppText(
-                      'OR',
-                      size: 14.fSize,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(color: AppColors.border, thickness: 1),
-                  ),
-                ],
-              ),
-
-              Gap.v(20),
-
-              /// Resend Code Button
-              CustomButton(
-                text: _canResend
-                    ? 'Resend Code'
-                    : 'Resend in $_formattedTimer',
-                onPressed: () => _resendCode(auth),
-                backgroundColor: AppColors.cardBackground,
-                textColor: AppColors.textPrimary,
-                borderRadius: 10.adaptSize,
-                height: 48.v,
-                width: double.infinity,
-                fontSize: 15.fSize,
-                fontWeight: FontWeight.w500,
-                borderColor: AppColors.border,
-                isDisabled: !_canResend || auth.isLoading,
-              ),
-
               Gap.v(24),
 
-              /// Footer Links
+              /// Resend Code Button
+              TextButton(
+                onPressed: _canResend ? () => _resendCode(auth) : null,
+                child: RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontSize: 14.fSize,
+                      color: AppColors.textSecondary,
+                    ),
+                    children: [
+                      const TextSpan(text: "Didn't receive code? "),
+                      TextSpan(
+                        text:
+                            _canResend
+                                ? 'Resend'
+                                : 'Resend in $_formattedTimer',
+                        style: TextStyle(
+                          color:
+                              _canResend
+                                  ? AppColors.primaryBlue
+                                  : AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

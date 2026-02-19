@@ -33,12 +33,13 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
         showBackButton: false,
         title: 'Admin Dashboard',
         leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () {
-              Scaffold.of(context).openDrawer();
-            },
-          ),
+          builder:
+              (context) => IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openDrawer();
+                },
+              ),
         ),
       ),
       drawer: AdminDrawer(),
@@ -56,7 +57,53 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 /// 🔹 HEADER
-                
+                AppText(
+                  'Dashboard Overview',
+                  size: 20.fSize,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+
+                Gap.v(16),
+
+                /// 🔹 FILTER CHIPS
+                Consumer<AdminDashboardViewModel>(
+                  builder: (context, viewModel, _) {
+                    return SizedBox(
+                      height: 40.v,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: viewModel.filters.length,
+                        separatorBuilder: (_, __) => Gap.h(10),
+                        itemBuilder: (context, index) {
+                          final filter = viewModel.filters[index];
+                          final isSelected = viewModel.selectedFilter == filter;
+
+                          return ChoiceChip(
+                            label: Text(filter),
+                            selected: isSelected,
+                            onSelected: (_) => viewModel.setFilter(filter),
+                            selectedColor: AppColors.primaryBlue,
+                            backgroundColor: AppColors.cardBackground,
+                            labelStyle: TextStyle(
+                              color:
+                                  isSelected
+                                      ? Colors.white
+                                      : AppColors.textSecondary,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+
+                Gap.v(24),
+
                 /// 🔹 STATS GRID
                 Consumer<AdminDashboardViewModel>(
                   builder: (context, viewModel, child) {
@@ -68,7 +115,10 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
                         mainAxisSpacing: 16,
                         crossAxisSpacing: 16,
                         childAspectRatio: 1.1,
-                        children: List.generate(5, (index) => _ShimmerStatCard()),
+                        children: List.generate(
+                          5,
+                          (index) => _ShimmerStatCard(),
+                        ),
                       );
                     }
 
@@ -214,10 +264,7 @@ class _StatCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withOpacity(0.25),
-            color.withOpacity(0.05),
-          ],
+          colors: [color.withOpacity(0.25), color.withOpacity(0.05)],
         ),
         border: Border.all(color: AppColors.border),
       ),
@@ -233,11 +280,7 @@ class _StatCard extends StatelessWidget {
             color: AppColors.textPrimary,
           ),
           Gap.v(4),
-          AppText(
-            title,
-            size: 14.fSize,
-            color: AppColors.textSecondary,
-          ),
+          AppText(title, size: 14.fSize, color: AppColors.textSecondary),
         ],
       ),
     );
