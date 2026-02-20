@@ -7,6 +7,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/routes/routes_name.dart';
 import '../../core/shared/app_button.dart';
 import '../../core/shared/app_text.dart';
+import '../../core/shared/loading_dialogue.dart';
 import '../../core/utils/size_utils.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 
@@ -396,13 +397,18 @@ class _SignInViewState extends State<SignInView> {
     }
 
     auth.setPhoneNumber(_completePhoneNumber);
+    LoadingDialog.show(context, message: 'Sending OTP...');
     auth.signInAndSendOtp(
       _completePhoneNumber,
       () {
+        if (!context.mounted) return;
+        LoadingDialog.hide(context);
         // Navigate to verify code screen
         Navigator.pushNamed(context, RouteNames.verifyCode);
       },
       onError: (error) {
+        if (!context.mounted) return;
+        LoadingDialog.hide(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: AppText(error, color: AppColors.white),

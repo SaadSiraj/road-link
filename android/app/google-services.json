@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:518827944109:android:8d1e5fec9e8033bbd67e24",
+        "mobilesdk_app_id": "1:518827944109:android:ba7ff84362b22af4d67e24",
         "android_client_info": {
-          "package_name": "com.mario.roadlink"
+          "package_name": "com.travelquoter.platoscan"
         }
       },
       "oauth_client": [],

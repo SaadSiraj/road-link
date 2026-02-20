@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAi5nH1LLkH6q4HeaGqwVUXMsBTfGdTHXg',
-    appId: '1:518827944109:android:8d1e5fec9e8033bbd67e24',
+    appId: '1:518827944109:android:ba7ff84362b22af4d67e24',
     messagingSenderId: '518827944109',
     projectId: 'platechat2',
     storageBucket: 'platechat2.firebasestorage.app',
@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCCyJinA1yNE_BE4sQ9Sh6d83Yn6aBivPI',
-    appId: '1:518827944109:ios:1bfa78454409f200d67e24',
+    appId: '1:518827944109:ios:2ab08a3b57c9310ad67e24',
     messagingSenderId: '518827944109',
     projectId: 'platechat2',
     storageBucket: 'platechat2.firebasestorage.app',
-    iosBundleId: 'com.mario.roadlink',
+    iosBundleId: 'com.travelquoter.platoscan',
   );
 }
