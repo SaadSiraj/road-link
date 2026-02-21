@@ -104,6 +104,11 @@ class AuthViewModel extends ChangeNotifier {
     );
   }
 
+  void clearError() {
+    errorMessage = null;
+    notifyListeners();
+  }
+
   void setPhoneNumber(String phone) {
     phoneNumber = phone;
     notifyListeners();

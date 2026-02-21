@@ -8,6 +8,7 @@ import '../../../core/shared/app_button.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../core/shared/loading_dialogue.dart';
 import '../../../core/utils/size_utils.dart';
+import '../../../core/routes/routes_name.dart';
 import '../../../viewmodels/auth_viewmodel.dart';
 
 class AccountDetailsView extends StatelessWidget {
@@ -45,6 +46,14 @@ class _AccountDetailsContentState extends State<AccountDetailsContent> {
   final TextEditingController _phoneController = TextEditingController();
   String _completePhoneNumber = '';
   bool _isPhoneValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthViewModel>().clearError();
+    });
+  }
 
   @override
   void dispose() {
@@ -87,7 +96,36 @@ class _AccountDetailsContentState extends State<AccountDetailsContent> {
       onError: (error) {
         if (!context.mounted) return;
         LoadingDialog.hide(context);
-        _showSnack(error);
+        if (error.contains('already exists') || error.contains('Please login')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'An account with this number already exists. Please sign in.',
+                      style: TextStyle(color: Colors.white, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: AppColors.primaryBlue,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              margin: const EdgeInsets.all(16),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (context.mounted) {
+              Navigator.of(context).pushReplacementNamed(RouteNames.signIn);
+            }
+          });
+        } else {
+          _showSnack(error);
+        }
       },
     );
   }

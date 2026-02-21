@@ -14,6 +14,9 @@ class ConversationModel {
   final String? requestedBy;
   /// Unread count per user: uid -> count (for badge on chat list)
   final Map<String, int> unreadBy;
+  /// Human-readable vehicle label stored at conversation creation time.
+  /// e.g. "NBR01A · Mercedes-Benz C-Class 2019"
+  final String? vehicleLabel;
 
   const ConversationModel({
     required this.id,
@@ -25,6 +28,7 @@ class ConversationModel {
     this.status = 'accepted',
     this.requestedBy,
     this.unreadBy = const {},
+    this.vehicleLabel,
   });
 
   bool get isPending => status == 'pending';
@@ -74,6 +78,7 @@ class ConversationModel {
       status: data['status'] as String? ?? 'accepted',
       requestedBy: data['requestedBy'] as String?,
       unreadBy: unreadBy,
+      vehicleLabel: data['vehicleLabel'] as String?,
     );
   }
 

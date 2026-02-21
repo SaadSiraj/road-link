@@ -273,7 +273,7 @@ class _AnimatedPlateStrip extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         AppText(
-          'Plate',
+          'Plato',
           size: 34.fSize,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
