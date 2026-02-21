@@ -3,12 +3,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/conversation_model.dart';
 import '../models/message_model.dart';
-import 'fcm_sender_service.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FCMSenderService _fcmSender = FCMSenderService();
 
   String? get currentUserId => _auth.currentUser?.uid;
 
@@ -37,8 +35,11 @@ class ChatService {
   }
 
   /// Get or create a conversation with another user. Direct chat, no request flow.
+  /// [vehicleLabel] is stored permanently in the doc (e.g. "NBR01A · Toyota Corolla 2020")
+  /// so the chat list always shows the right vehicle, regardless of later messages.
   Future<ConversationModel?> getOrCreateConversation({
     required String otherUserId,
+    String? vehicleLabel,
   }) async {
     final uid = currentUserId;
     if (uid == null || otherUserId == uid) return null;
@@ -48,14 +49,20 @@ class ChatService {
     final existing = await ref.get();
 
     if (existing.exists) {
-      return ConversationModel.fromFirestore(existing);
+      // If a label is provided and the doc doesn't have one yet, write it now.
+      if (vehicleLabel != null && existing.data()?['vehicleLabel'] == null) {
+        await ref.update({'vehicleLabel': vehicleLabel});
+      }
+      final refreshed = await ref.get();
+      return ConversationModel.fromFirestore(refreshed);
     }
 
-    final data = {
+    final data = <String, dynamic>{
       'participantIds': [uid, otherUserId],
       'lastMessageAt': FieldValue.serverTimestamp(),
       'createdAt': FieldValue.serverTimestamp(),
       'unreadBy': {uid: 0, otherUserId: 0},
+      if (vehicleLabel != null) 'vehicleLabel': vehicleLabel,
     };
     await ref.set(data);
 
@@ -112,52 +119,12 @@ class ChatService {
     };
     if (otherUid != null) {
       updates['unreadBy.$otherUid'] = FieldValue.increment(1);
-
-      // Send direct FCM notification
-      _sendDirectNotification(otherUid, uid, text.trim(), conversationId);
+      // Notification is sent by the Cloud Function (functions/index.js) — no duplicate send here.
     }
     await convRef.update(updates);
   }
 
-  Future<void> _sendDirectNotification(
-    String recipientId,
-    String senderId,
-    String text,
-    String conversationId,
-  ) async {
-    try {
-      // 1. Get recipient FCM token
-      final recipientDoc =
-          await _firestore.collection('users').doc(recipientId).get();
-      final recipientToken = recipientDoc.data()?['fcmToken'] as String?;
-      if (recipientToken == null || recipientToken.isEmpty) return;
 
-      // 2. Get sender profile for notification content
-      final senderProfile = await getUserProfile(senderId);
-      final senderName = senderProfile['name'] ?? 'Someone';
-      final senderPhotoUrl = senderProfile['photoUrl'] ?? '';
-
-      // 3. Prepare payload (consistent with what Cloud Function was sending)
-      final body = text.length > 100 ? '${text.substring(0, 97)}...' : text;
-
-      await _fcmSender.sendNotification(
-        recipientToken: recipientToken,
-        title: senderName,
-        body: body,
-        data: {
-          'conversationId': conversationId,
-          'otherUserId': senderId,
-          'otherUserName': senderName,
-          'otherUserPhotoUrl': senderPhotoUrl,
-          'body': body,
-          'title': senderName,
-          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-        },
-      );
-    } catch (e) {
-      print('Failed to send direct notification: $e');
-    }
-  }
 
   /// Mark conversation as read for current user (clear unread badge).
   Future<void> markConversationAsRead(String conversationId) async {

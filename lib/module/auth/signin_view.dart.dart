@@ -24,6 +24,14 @@ class _SignInViewState extends State<SignInView> {
   bool _isPhoneValid = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AuthViewModel>().clearError();
+    });
+  }
+
+  @override
   void dispose() {
     _phoneController.dispose();
     super.dispose();

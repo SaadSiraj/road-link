@@ -76,7 +76,7 @@ class CarRegistrationContent extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
           decoration: InputDecoration(
-            hintText: 'Select $label',
+            hintText: '$label',
             hintStyle: TextStyle(
               color: AppColors.textSecondary.withOpacity(0.5),
               fontSize: 15.fSize,
@@ -543,8 +543,16 @@ Future<void> _handleStartChat(
 
   try {
     final chatService = ChatService();
+    final plate = (carData['plateNumber'] ?? '').toString().toUpperCase();
+    final make  = carData['make']?.toString()  ?? '';
+    final model = carData['model']?.toString() ?? '';
+    final year  = carData['year']?.toString()  ?? '';
+    final vParts = [if (make.isNotEmpty) make, if (model.isNotEmpty) model, if (year.isNotEmpty) year];
+    final vehicleLabel = [plate, if (vParts.isNotEmpty) vParts.join(' ')].where((s) => s.isNotEmpty).join(' · ');
+
     final conversation = await chatService.getOrCreateConversation(
       otherUserId: ownerId,
+      vehicleLabel: vehicleLabel.isNotEmpty ? vehicleLabel : null,
     );
 
     if (!context.mounted) return;
@@ -564,13 +572,22 @@ Future<void> _handleStartChat(
     }
 
     // Send car details as first message
-    final plate = (carData['plateNumber'] ?? 'N/A').toString().toUpperCase();
-    final make = carData['make'] ?? 'Unknown';
-    final model = carData['model'] ?? 'Unknown';
-    final year = carData['year']?.toString() ?? 'N/A';
     final color = carData['color'] ?? 'Unknown';
+    final plateDisplay = plate.isNotEmpty ? plate : 'N/A';
+    final makeDisplay  = make.isNotEmpty  ? make  : 'Unknown';
+    final modelDisplay = model.isNotEmpty ? model : 'Unknown';
+    final yearDisplay  = year.isNotEmpty  ? year  : 'N/A';
     final firstMessage =
-        '🚗 I found your car: $plate — $make $model ($year, $color)';
+        '📋 Vehicle Inquiry\n'
+        '─────────────────\n'
+        'Plate:  $plateDisplay\n'
+        'Make:   $makeDisplay\n'
+        'Model:  $modelDisplay\n'
+        'Year:   $yearDisplay\n'
+        'Colour: $color\n'
+        '─────────────────\n'
+        'A user has identified this vehicle and would like to get in touch. '
+        'No personal information has been shared.';
 
     await chatService.sendMessage(
       conversationId: conversation.id,

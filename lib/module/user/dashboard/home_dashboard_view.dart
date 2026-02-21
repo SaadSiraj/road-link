@@ -9,6 +9,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_images.dart';
 import '../../../core/routes/routes_name.dart';
 import '../../../core/shared/app_text.dart';
+import '../../../core/shared/loading_dialogue.dart';
 import '../../../viewmodels/car_registration_viewmodel.dart';
 import '../../../viewmodels/home_dashboard_viewmodel.dart'
     show HomeDashboardViewModel, PlateSearchResult, PlateSearchStatus;
@@ -862,7 +863,15 @@ class _HomeDashboardViewState extends State<HomeDashboardView>
     );
     if (!context.mounted || plate == null || plate.isEmpty) return;
     final vm = Provider.of<HomeDashboardViewModel>(context, listen: false);
-    final result = await vm.searchCarByPlate(plate);
+    final result = await LoadingDialog.run(
+      context,
+      message: 'Searching...',
+      future: () async {
+        await Future.delayed(const Duration(milliseconds: 80));
+        if (!context.mounted) return PlateSearchResult.error('Cancelled');
+        return vm.searchCarByPlate(plate);
+      }(),
+    );
     if (!context.mounted) return;
     _handlePlateSearchResult(context, result);
   }

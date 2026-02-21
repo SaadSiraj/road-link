@@ -1,10 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:roadlink/core/utils/size_utils.dart';
 
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_images.dart';
 import '../../../core/shared/app_text.dart';
 import '../../../models/message_model.dart';
 import '../../../services/fcm_service.dart';
@@ -111,9 +109,21 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
+  /// Extracts the plate number from the first structured vehicle inquiry message.
+  String _extractTitle(ChatDetailViewModel vm) {
+    final firstMsg = vm.messages.isNotEmpty ? vm.messages.first.text : '';
+    final plateMatch = RegExp(r'Plate:\s+([A-Z0-9]+)').firstMatch(firstMsg);
+    final plate = plateMatch?.group(1);
+    if (plate != null) return 'Vehicle Inquiry · $plate';
+    // Fallback: try to extract from the otherUserName (set by chat list)
+    if (vm.otherUserName.contains('·')) return vm.otherUserName;
+    return 'Vehicle Inquiry';
+  }
+
   Widget _buildHeader(BuildContext context, ChatDetailViewModel vm) {
+    final title = _extractTitle(vm);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
+      padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 10.v),
       decoration: BoxDecoration(
         color: AppColors.scaffoldBackground,
         border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
@@ -122,118 +132,47 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         children: [
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: Icon(
-              Icons.arrow_back,
-              size: 24.fSize,
-              color: AppColors.textPrimary,
-            ),
+            icon: Icon(Icons.arrow_back, size: 24.fSize, color: AppColors.textPrimary),
           ),
-          Gap.h(12),
-          _buildAvatar(vm.otherUserPhotoUrl),
+          Gap.h(4),
+          // System avatar — car icon, no personal photo
+          Container(
+            width: 40.adaptSize,
+            height: 40.adaptSize,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withOpacity(0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primaryBlue.withOpacity(0.25), width: 1.5),
+            ),
+            child: Icon(Icons.directions_car_rounded, color: AppColors.primaryBlue, size: 22.fSize),
+          ),
           Gap.h(12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText(
-                  vm.otherUserName,
-                  size: 16.fSize,
+                  title,
+                  size: 15.fSize,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
                 Gap.v(2),
                 Row(
                   children: [
-                    Container(
-                      width: 8.adaptSize,
-                      height: 8.adaptSize,
-                      decoration: BoxDecoration(
-                        color:
-                            vm.isOnline
-                                ? AppColors.success
-                                : AppColors.textSecondary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Gap.h(6),
+                    Icon(Icons.lock_outline_rounded, size: 11.fSize, color: AppColors.textSecondary),
+                    Gap.h(4),
                     AppText(
-                      vm.getLastSeenText(),
-                      size: 12.fSize,
-                      color:
-                          vm.isOnline
-                              ? AppColors.success
-                              : AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      'Private vehicle conversation',
+                      size: 11.fSize,
+                      color: AppColors.textSecondary,
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          // IconButton(
-          //   onPressed: () {},
-          //   icon: Icon(
-          //     Icons.phone,
-          //     size: 24.fSize,
-          //     color: AppColors.textPrimary,
-          //   ),
-          // ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(
-              Icons.more_vert,
-              size: 24.fSize,
-              color: AppColors.textPrimary,
-            ),
-          ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(String? photoUrl) {
-    return Container(
-      width: 40.adaptSize,
-      height: 40.adaptSize,
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: ClipOval(
-        child:
-            photoUrl != null && photoUrl.isNotEmpty
-                ? CachedNetworkImage(
-                  imageUrl: photoUrl,
-                  fit: BoxFit.cover,
-                  placeholder:
-                      (_, __) => Container(
-                        color: AppColors.cardBackground,
-                        child: Icon(
-                          Icons.person,
-                          color: AppColors.textSecondary,
-                          size: 24.fSize,
-                        ),
-                      ),
-                  errorWidget:
-                      (_, __, ___) => Container(
-                        color: AppColors.cardBackground,
-                        child: Icon(
-                          Icons.person,
-                          color: AppColors.textSecondary,
-                          size: 24.fSize,
-                        ),
-                      ),
-                )
-                : Image.asset(
-                  AppImages.userAvatar,
-                  fit: BoxFit.cover,
-                  errorBuilder:
-                      (_, __, ___) => Container(
-                        color: AppColors.cardBackground,
-                        child: Icon(
-                          Icons.person,
-                          color: AppColors.textSecondary,
-                          size: 24.fSize,
-                        ),
-                      ),
-                ),
       ),
     );
   }
@@ -244,16 +183,20 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 48.adaptSize,
-              color: AppColors.textSecondary,
-            ),
+            Icon(Icons.directions_car_outlined, size: 48.adaptSize, color: AppColors.textSecondary),
             Gap.v(12),
             AppText(
-              vm.emptyStateMessage,
-              size: 14.fSize,
+              'No messages yet.',
+              size: 15.fSize,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
+            Gap.v(6),
+            AppText(
+              'Start the conversation about this vehicle.',
+              size: 13.fSize,
               color: AppColors.textSecondary,
+              align: TextAlign.center,
             ),
           ],
         ),
@@ -267,8 +210,84 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       itemBuilder: (context, index) {
         final msg = vm.messages[index];
         final isMe = vm.isMessageFromMe(msg);
+        final isSystemCard = msg.text.startsWith('📋 Vehicle Inquiry');
+        if (isSystemCard) return _buildSystemCard(context, msg);
         return _buildMessageBubble(context, vm, msg, isMe);
       },
+    );
+  }
+
+  /// Renders the structured vehicle report as a styled card, not a plain bubble.
+  Widget _buildSystemCard(BuildContext context, MessageModel msg) {
+    final lines = msg.text.split('\n').where((l) => l.trim().isNotEmpty && !l.contains('─')).toList();
+    final details = lines.skip(1).toList(); // skip "📋 Vehicle Inquiry"
+    final note = details.isNotEmpty ? details.removeLast() : '';
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.v),
+      padding: EdgeInsets.all(16.adaptSize),
+      decoration: BoxDecoration(
+        color: AppColors.primaryBlue.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16.adaptSize),
+        border: Border.all(color: AppColors.primaryBlue.withOpacity(0.25), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.directions_car_rounded, size: 18.fSize, color: AppColors.primaryBlue),
+              Gap.h(8),
+              AppText('Vehicle Inquiry', size: 14.fSize, fontWeight: FontWeight.w700, color: AppColors.primaryBlue),
+            ],
+          ),
+          Divider(color: AppColors.primaryBlue.withOpacity(0.2), height: 20),
+          for (final line in details)
+            Padding(
+              padding: EdgeInsets.only(bottom: 4.v),
+              child: Text(
+                line,
+                style: TextStyle(
+                  fontSize: 13.fSize,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'monospace',
+                  height: 1.5,
+                ),
+              ),
+            ),
+          if (note.isNotEmpty) ...[
+            Gap.v(8),
+            Container(
+              padding: EdgeInsets.all(10.adaptSize),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(10.adaptSize),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.lock_outline_rounded, size: 13.fSize, color: AppColors.textSecondary),
+                  Gap.h(6),
+                  Expanded(
+                    child: AppText(
+                      note,
+                      size: 12.fSize,
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Gap.v(8),
+          AppText(
+            ChatDetailViewModel.formatMessageTime(msg.createdAt),
+            size: 10.fSize,
+            color: AppColors.textSecondary,
+          ),
+        ],
+      ),
     );
   }
 
@@ -283,19 +302,9 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.sizeOf(context).width * 0.75,
-        ),
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.75),
         margin: EdgeInsets.only(bottom: 8.v),
-        padding: EdgeInsets.only(
-          left: 16.h,
-          right:
-              isMe
-                  ? 12.h
-                  : 16.h, // Less padding on right for timestamp/tick if me
-          top: 12.v,
-          bottom: 12.v,
-        ),
+        padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
         decoration: BoxDecoration(
           color: isMe ? AppColors.primaryBlue : AppColors.cardBackground,
           borderRadius: BorderRadius.only(
@@ -331,21 +340,14 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                 AppText(
                   ChatDetailViewModel.formatMessageTime(msg.createdAt),
                   size: 10.fSize,
-                  color:
-                      isMe
-                          ? Colors.white.withOpacity(0.7)
-                          : AppColors.textSecondary.withOpacity(0.7),
+                  color: isMe ? Colors.white.withOpacity(0.7) : AppColors.textSecondary.withOpacity(0.7),
                 ),
                 if (isMe) ...[
                   Gap.h(4),
                   Icon(
                     isRead ? Icons.done_all : Icons.check,
                     size: 16.fSize,
-                    color:
-                        isRead
-                            ? Colors
-                                .white // Use white or a distinct color for read in blue bubble
-                            : Colors.white.withOpacity(0.7),
+                    color: isRead ? Colors.white : Colors.white.withOpacity(0.7),
                   ),
                 ],
               ],
@@ -358,88 +360,56 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
   Widget _buildInputBar(BuildContext context, ChatDetailViewModel vm) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 12.v),
+      padding: EdgeInsets.fromLTRB(16.h, 10.v, 16.h, 12.v),
       decoration: BoxDecoration(
         color: AppColors.scaffoldBackground,
         border: Border(top: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40.adaptSize,
-            height: 40.adaptSize,
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              onPressed: () {},
-              icon: Icon(
-                Icons.add,
-                size: 24.fSize,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Gap.h(12),
           Expanded(
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.h),
               decoration: BoxDecoration(
                 color: AppColors.textFieldFillColor,
                 borderRadius: BorderRadius.circular(24.adaptSize),
+                border: Border.all(color: AppColors.border, width: 1),
               ),
               child: TextField(
                 controller: _messageController,
                 enabled: vm.canSendMessages,
+                maxLines: 4,
+                minLines: 1,
                 decoration: InputDecoration(
-                  hintText:
-                      vm.canSendMessages
-                          ? 'Type a message...'
-                          : 'Accept the request to chat',
-                  hintStyle: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 14.fSize,
-                  ),
+                  hintText: 'Message about this vehicle…',
+                  hintStyle: TextStyle(color: AppColors.textSecondary, fontSize: 14.fSize),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 12.v),
                 ),
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14.fSize,
-                ),
-                onSubmitted:
-                    vm.canSendMessages ? (_) => _sendMessage(vm) : null,
+                style: TextStyle(color: AppColors.textPrimary, fontSize: 14.fSize),
+                onSubmitted: vm.canSendMessages ? (_) => _sendMessage(vm) : null,
               ),
             ),
           ),
-          Gap.h(12),
+          Gap.h(10),
           Container(
-            width: 40.adaptSize,
-            height: 40.adaptSize,
+            width: 42.adaptSize,
+            height: 42.adaptSize,
             decoration: BoxDecoration(
-              color:
-                  vm.canSendMessages
-                      ? AppColors.primaryBlue
-                      : AppColors.textSecondary.withValues(alpha: 0.3),
+              color: vm.canSendMessages
+                  ? AppColors.primaryBlue
+                  : AppColors.textSecondary.withOpacity(0.3),
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed:
-                  vm.canSendMessages && !vm.isSending
-                      ? () => _sendMessage(vm)
-                      : null,
-              icon:
-                  vm.isSending
-                      ? SizedBox(
-                        width: 20.adaptSize,
-                        height: 20.adaptSize,
-                        child: const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                      : Icon(Icons.send, size: 20.fSize, color: Colors.white),
+              onPressed: vm.canSendMessages && !vm.isSending ? () => _sendMessage(vm) : null,
+              icon: vm.isSending
+                  ? SizedBox(
+                      width: 18.adaptSize,
+                      height: 18.adaptSize,
+                      child: const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Icon(Icons.send_rounded, size: 20.fSize, color: Colors.white),
             ),
           ),
         ],

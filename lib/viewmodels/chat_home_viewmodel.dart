@@ -5,27 +5,15 @@ import 'package:flutter/foundation.dart';
 import '../models/conversation_model.dart';
 import '../services/chat_service.dart';
 
-/// Stream that emits the latest conversation list so the UI can rebuild on every Firestore update.
-class _ConversationsStream {
-  final StreamController<List<ChatConversationItem>> _controller =
-      StreamController<List<ChatConversationItem>>.broadcast();
-
-  Stream<List<ChatConversationItem>> get stream => _controller.stream;
-
-  void add(List<ChatConversationItem> items) {
-    if (!_controller.isClosed) _controller.add(items);
-  }
-
-  void close() => _controller.close();
-}
-
 /// UI-friendly conversation item with other user's display info
 class ChatConversationItem {
   final ConversationModel conversation;
   final String otherUserId;
   final String otherUserName;
   final String? otherUserPhotoUrl;
-  /// Unread count for the current user; comes from conversation doc (unreadBy) and updates in real time via stream.
+
+  /// Unread count for the current user; comes from conversation doc (unreadBy)
+  /// and updates in real time via stream.
   final int unreadCount;
 
   const ChatConversationItem({
@@ -35,6 +23,15 @@ class ChatConversationItem {
     this.otherUserPhotoUrl,
     this.unreadCount = 0,
   });
+
+  /// Permanent vehicle label stored in Firestore, e.g. "NBR01A · Toyota Corolla 2020"
+  String? get vehicleLabel => conversation.vehicleLabel;
+
+  /// Best title for the chat list entry.
+  String get displayTitle =>
+      vehicleLabel != null && vehicleLabel!.isNotEmpty
+          ? vehicleLabel!
+          : 'Vehicle Inquiry';
 }
 
 class ChatHomeViewModel extends ChangeNotifier {
@@ -44,117 +41,155 @@ class ChatHomeViewModel extends ChangeNotifier {
   bool _isLoading = true;
   String? _errorMessage;
   StreamSubscription? _conversationsSub;
-  final _ConversationsStream _conversationsStream = _ConversationsStream();
+
+  // Cache profiles so we don't re-fetch on every Firestore emission
+  final Map<String, Map<String, String?>> _profileCache = {};
 
   List<ChatConversationItem> get conversations => _conversations;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  /// Use this in StreamBuilder so the list (and unread badges) rebuild on every Firestore update.
-  Stream<List<ChatConversationItem>> get conversationsStream => _conversationsStream.stream;
-
   String? get currentUserId => _chatService.currentUserId;
 
+  /// Call once from the widget. Safe to call multiple times — idempotent.
   void initialize() {
-    if (_conversationsSub != null) return; // Already listening; keep single subscription
+    // If already subscribed and stream is alive, do nothing.
+    if (_conversationsSub != null) return;
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
-    // Firestore snapshots(): every doc change (new message, unreadBy, lastMessage) triggers an emission.
+    _subscribeToConversations();
+  }
+
+  void _subscribeToConversations() {
+    // Cancel any stale subscription before creating a new one.
+    _conversationsSub?.cancel();
+    _conversationsSub = null;
+
     _conversationsSub = _chatService.getConversationsStream().listen(
-      (list) {
-        final uid = _chatService.currentUserId;
-        if (uid == null) {
-          _conversations = [];
-          _isLoading = false;
-          _conversationsStream.add([]);
-          notifyListeners();
-          return;
-        }
-
-        final oldByCid = {for (final i in _conversations) i.conversation.id: i};
-        final items = <ChatConversationItem>[];
-        for (final c in list) {
-          final otherId = c.otherParticipantId(uid);
-          if (otherId == null) continue;
-          final unreadCount = c.unreadCountFor(uid);
-          final cached = oldByCid[c.id];
-          items.add(
-            ChatConversationItem(
-              conversation: c,
-              otherUserId: otherId,
-              otherUserName: cached?.otherUserName ?? '…',
-              otherUserPhotoUrl: cached?.otherUserPhotoUrl,
-              unreadCount: unreadCount,
-            ),
-          );
-        }
-        _conversations = items;
-        _isLoading = false;
-        _errorMessage = null;
-        _conversationsStream.add(items); // Drives StreamBuilder → badge updates in real time
-        notifyListeners();
-
-        _fetchProfilesThenUpdate(list, uid);
-      },
+      _onConversationsUpdated,
       onError: (e) {
         _errorMessage = e.toString();
         _isLoading = false;
         notifyListeners();
       },
+      // Auto-resubscribe if the stream closes unexpectedly
+      cancelOnError: false,
     );
   }
 
-  Future<void> _fetchProfilesThenUpdate(
-    List<ConversationModel> list,
-    String uid,
-  ) async {
-    final profiles = await Future.wait([
-      for (final c in list)
-        (() async {
-          final otherId = c.otherParticipantId(uid);
-          if (otherId == null) return <String, dynamic>{};
-          final p = await _chatService.getUserProfile(otherId);
-          return <String, dynamic>{
-            'id': otherId,
-            'name': p['name'],
-            'photoUrl': p['photoUrl'],
-          };
-        })(),
-    ]);
-    final profileById = <String, Map<String, dynamic>>{};
-    for (final p in profiles) {
-      final id = p['id'] as String?;
-      if (id != null) profileById[id] = p;
+  void _onConversationsUpdated(List<ConversationModel> list) {
+    final uid = _chatService.currentUserId;
+    if (uid == null) {
+      _conversations = [];
+      _isLoading = false;
+      notifyListeners();
+      return;
     }
-    // Merge names/photos into current list so we never overwrite newer unread counts
-    final current = _conversations;
-    final merged = <ChatConversationItem>[];
-    for (final i in current) {
-      final p = profileById[i.otherUserId];
-      final name =
-          p?['name']?.trim().isNotEmpty == true ? p!['name']! : i.otherUserName;
-      final photoUrl = p?['photoUrl'] ?? i.otherUserPhotoUrl;
-      merged.add(
+
+    // Build items immediately using cached profile data — no delay for the UI.
+    final items = <ChatConversationItem>[];
+    final oldByCid = {for (final i in _conversations) i.conversation.id: i};
+
+    for (final c in list) {
+      final otherId = c.otherParticipantId(uid);
+      if (otherId == null) continue;
+
+      final unreadCount = c.unreadCountFor(uid);
+      final cached = oldByCid[c.id];
+      final cachedProfile = _profileCache[otherId];
+
+      items.add(
         ChatConversationItem(
-          conversation: i.conversation,
-          otherUserId: i.otherUserId,
-          otherUserName: name,
-          otherUserPhotoUrl: photoUrl,
-          unreadCount: i.unreadCount,
+          conversation: c,
+          otherUserId: otherId,
+          // Use cached profile name > previously loaded name > placeholder
+          otherUserName: cachedProfile?['name'] ?? cached?.otherUserName ?? '…',
+          otherUserPhotoUrl:
+              cachedProfile?['photoUrl'] ?? cached?.otherUserPhotoUrl,
+          unreadCount: unreadCount,
         ),
       );
     }
-    _conversations = merged;
-    _conversationsStream.add(merged); // Keep StreamBuilder in sync after profile merge
+
+    _conversations = items;
+    _isLoading = false;
+    _errorMessage = null;
     notifyListeners();
+
+    // Fetch any profiles not yet in cache in the background.
+    _fetchMissingProfiles(list, uid);
+  }
+
+  Future<void> _fetchMissingProfiles(
+    List<ConversationModel> list,
+    String uid,
+  ) async {
+    // Only fetch profiles we haven't cached yet.
+    final missing = list
+        .map((c) => c.otherParticipantId(uid))
+        .whereType<String>()
+        .where((id) => !_profileCache.containsKey(id))
+        .toSet()
+        .toList();
+
+    if (missing.isEmpty) return;
+
+    final fetched = await Future.wait(
+      missing.map((otherId) async {
+        final p = await _chatService.getUserProfile(otherId);
+        return MapEntry(otherId, p);
+      }),
+    );
+
+    bool changed = false;
+    for (final entry in fetched) {
+      _profileCache[entry.key] = entry.value;
+      changed = true;
+    }
+
+    if (!changed) return;
+
+    // Merge new profile data into current conversation list.
+    _conversations = _conversations.map((item) {
+      final profile = _profileCache[item.otherUserId];
+      if (profile == null) return item;
+
+      final name =
+          (profile['name']?.trim().isNotEmpty == true)
+              ? profile['name']!
+              : item.otherUserName;
+      final photoUrl = profile['photoUrl'] ?? item.otherUserPhotoUrl;
+
+      if (name == item.otherUserName && photoUrl == item.otherUserPhotoUrl) {
+        return item; // No change — avoid unnecessary rebuilds.
+      }
+
+      return ChatConversationItem(
+        conversation: item.conversation,
+        otherUserId: item.otherUserId,
+        otherUserName: name,
+        otherUserPhotoUrl: photoUrl,
+        unreadCount: item.unreadCount,
+      );
+    }).toList();
+
+    notifyListeners();
+  }
+
+  /// Force a full refresh (e.g. pull-to-refresh).
+  Future<void> refresh() async {
+    _isLoading = true;
+    notifyListeners();
+    // Re-subscribe — the first emission will clear the loading state.
+    _subscribeToConversations();
   }
 
   @override
   void dispose() {
     _conversationsSub?.cancel();
     _conversationsSub = null;
-    _conversationsStream.close();
     super.dispose();
   }
 }

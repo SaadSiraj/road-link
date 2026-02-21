@@ -49,7 +49,7 @@ class ChatDetailViewModel extends ChangeNotifier {
   bool get canSendMessages => true;
 
   /// Message to show when there are no messages.
-  String get emptyStateMessage => 'No messages yet. Say hi!';
+  String get emptyStateMessage => 'Start the conversation about this vehicle.';
 
   /// Format last seen time
   String getLastSeenText() {

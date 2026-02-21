@@ -219,7 +219,11 @@ class HomeDashboardViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final conversation = await _chatService.getOrCreateConversation(otherUserId: ownerId);
+      final vehicleLabel = carData != null ? _buildVehicleLabel(carData) : null;
+      final conversation = await _chatService.getOrCreateConversation(
+        otherUserId: ownerId,
+        vehicleLabel: vehicleLabel,
+      );
       final profile = await _chatService.getUserProfile(ownerId);
 
       if (conversation == null) {
@@ -252,14 +256,34 @@ class HomeDashboardViewModel extends ChangeNotifier {
     }
   }
 
-  /// Format car data as a short message for the first chat message.
+  /// Short label for the conversation list: "NBR01A · Toyota Corolla 2020"
+  static String _buildVehicleLabel(Map<String, dynamic> car) {
+    final plate = (car['plateNumber'] ?? '').toString().toUpperCase();
+    final make  = car['make']  ?? '';
+    final model = car['model'] ?? '';
+    final year  = car['year']?.toString() ?? '';
+    final parts = [if (make.isNotEmpty) make, if (model.isNotEmpty) model, if (year.isNotEmpty) year];
+    final vehicle = parts.join(' ');
+    return plate.isNotEmpty && vehicle.isNotEmpty ? '$plate · $vehicle' : plate.isNotEmpty ? plate : vehicle;
+  }
+
+  /// Format car data as a professional system notification message.
   static String _formatCarInfoAsMessage(Map<String, dynamic> car) {
     final plate = (car['plateNumber'] ?? 'N/A').toString().toUpperCase();
-    final make = car['make'] ?? 'Unknown';
+    final make  = car['make']  ?? 'Unknown';
     final model = car['model'] ?? 'Unknown';
-    final year = car['year']?.toString() ?? 'N/A';
+    final year  = car['year']?.toString() ?? 'N/A';
     final color = car['color'] ?? 'Unknown';
-    return '🚗 I found your car: $plate — $make $model ($year, $color)';
+    return '📋 Vehicle Inquiry\n'
+        '─────────────────\n'
+        'Plate:  $plate\n'
+        'Make:   $make\n'
+        'Model:  $model\n'
+        'Year:   $year\n'
+        'Colour: $color\n'
+        '─────────────────\n'
+        'A user has identified this vehicle and would like to get in touch. '
+        'No personal information has been shared.';
   }
 }
 

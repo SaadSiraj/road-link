@@ -12,6 +12,7 @@ import '../../../core/constants/app_images.dart';
 import '../../../core/routes/routes_name.dart';
 import '../../../core/shared/app_dialog.dart';
 import '../../../core/shared/app_text.dart';
+import '../../../core/shared/loading_dialogue.dart';
 import '../../../services/chat_service.dart';
 import '../../../viewmodels/chat_home_viewmodel.dart';
 import '../../../viewmodels/home_dashboard_viewmodel.dart'
@@ -38,11 +39,13 @@ class _BaseNavigationState extends State<BaseNavigation> with WidgetsBindingObse
     });
   }
 
-  final List<Widget> pages = const [
-    HomeDashboardView(),
-    HomeDashboardView(),
-    ChatHomeView(),
+  static final List<Widget> _pages = [
+    HomeDashboardView(key: ValueKey('nav_home')),
+    SizedBox.shrink(key: ValueKey('nav_fab_slot')),
+    ChatHomeView(key: ValueKey('nav_chat')),
   ];
+
+  List<Widget> get pages => _pages;
 
   void onTabTapped(int index) {
     setState(() {
@@ -61,7 +64,15 @@ class _BaseNavigationState extends State<BaseNavigation> with WidgetsBindingObse
     if (!mounted || plate == null || plate.isEmpty) return;
     setState(() => selectedIndex = 0);
     final vm = Provider.of<HomeDashboardViewModel>(context, listen: false);
-    final result = await vm.searchCarByPlate(plate);
+    final result = await LoadingDialog.run(
+      context,
+      message: 'Searching...',
+      future: () async {
+        await Future.delayed(const Duration(milliseconds: 80));
+        if (!mounted) return PlateSearchResult.error('Cancelled');
+        return vm.searchCarByPlate(plate);
+      }(),
+    );
     if (!mounted) return;
     _handlePlateSearchResult(context, result);
   }

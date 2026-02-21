@@ -55,19 +55,25 @@ exports.sendChatNotification = onDocumentCreated(
 
     if (!fcmToken) return;
 
-    const body = text.length > 100 ? text.slice(0, 97) + "..." : text;
+    // Vehicle inquiry = someone scanned your car — don't expose scanner's identity in the notification
+    const isVehicleInquiry = text.startsWith("📋 Vehicle Inquiry");
+    const notifTitle = isVehicleInquiry ? "Someone scanned your car" : senderName;
+    const notifBody = isVehicleInquiry
+      ? "A user would like to get in touch"
+      : (text.length > 100 ? text.slice(0, 97) + "..." : text);
+
     const message = {
       notification: {
-        title: senderName,
-        body: body,
+        title: notifTitle,
+        body: notifBody,
       },
       data: {
         conversationId,
         otherUserId: senderId,
         otherUserName: senderName,
         otherUserPhotoUrl: senderPhotoUrl,
-        body,
-        title: senderName,
+        body: notifBody,
+        title: notifTitle,
         click_action: "FLUTTER_NOTIFICATION_CLICK",
       },
       token: fcmToken,
